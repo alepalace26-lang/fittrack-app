@@ -1,0 +1,2569 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FitTrack — Tu progreso, tu ritmo</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #181c25;
+    --surface2: #1e2330;
+    --surface3: #252a38;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0f2f8;
+    --text2: #8b93a8;
+    --text3: #5a6070;
+    --accent: #6c63ff;
+    --accent2: #8b84ff;
+    --accent-glow: rgba(108,99,255,0.18);
+    --green: #22c55e;
+    --green-bg: rgba(34,197,94,0.12);
+    --amber: #f59e0b;
+    --amber-bg: rgba(245,158,11,0.12);
+    --red: #ef4444;
+    --red-bg: rgba(239,68,68,0.12);
+    --blue: #3b82f6;
+    --blue-bg: rgba(59,130,246,0.12);
+    --r: 14px;
+    --r-sm: 8px;
+    --r-pill: 99px;
+    --font: 'Inter', 'SF Pro Display', system-ui, sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(15,17,23,0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px;
+  }
+  .nav-brand { display: flex; align-items: center; gap: 10px; }
+  .nav-logo {
+    width: 34px; height: 34px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 800; color: #fff;
+    letter-spacing: -1px;
+  }
+  .nav-title { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+  .nav-title span { color: var(--accent2); }
+  .nav-tabs { display: flex; gap: 4px; }
+  .nav-tab {
+    padding: 7px 16px;
+    border-radius: var(--r-pill);
+    font-size: 13px; font-weight: 500;
+    cursor: pointer; border: none;
+    background: transparent; color: var(--text2);
+    transition: all 0.2s;
+  }
+  .nav-tab:hover { background: var(--surface2); color: var(--text); }
+  .nav-tab.active { background: var(--accent-glow); color: var(--accent2); }
+
+  /* ── LAYOUT ── */
+  .app { display: none; }
+  .app.active { display: block; }
+  .page-wrap { max-width: 900px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  /* ── SECTION HEADER ── */
+  .section-head { margin-bottom: 24px; }
+  .section-head h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+  .section-head p { color: var(--text2); font-size: 14px; margin-top: 4px; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 20px 22px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 13px; font-weight: 600; color: var(--text2);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: 14px;
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 10px 20px; border-radius: var(--r-pill);
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    border: none; transition: all 0.18s; white-space: nowrap;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+  .btn-ghost { background: var(--surface2); color: var(--text2); border: 1px solid var(--border2); }
+  .btn-ghost:hover { color: var(--text); background: var(--surface3); }
+  .btn-danger { background: var(--red-bg); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+  .btn-danger:hover { background: rgba(239,68,68,0.2); }
+  .btn-sm { padding: 6px 14px; font-size: 12px; }
+  .btn-icon { padding: 8px; border-radius: 8px; }
+
+  /* ── FORM ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid.cols3 { grid-template-columns: 1fr 1fr 1fr; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 12px; font-weight: 600; color: var(--text2); letter-spacing: 0.03em; }
+  input, select, textarea {
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: var(--r-sm); color: var(--text);
+    padding: 9px 13px; font-size: 14px; font-family: var(--font);
+    transition: border-color 0.2s, box-shadow 0.2s; width: 100%;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  select option { background: var(--surface2); }
+  textarea { resize: vertical; min-height: 70px; }
+
+  /* ── DAY TABS ── */
+  .day-selector { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
+  .day-btn {
+    padding: 8px 14px; border-radius: var(--r-pill);
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--border2); background: var(--surface);
+    color: var(--text2); transition: all 0.18s;
+  }
+  .day-btn:hover { border-color: var(--accent); color: var(--accent2); }
+  .day-btn.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent2); }
+  .day-btn.has-exercises { position: relative; }
+  .day-btn.has-exercises::after {
+    content: ''; position: absolute; top: 4px; right: 4px;
+    width: 5px; height: 5px; border-radius: 50%; background: var(--green);
+  }
+
+  /* ── EXERCISE CARD ── */
+  .exercise-item {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--r-sm); padding: 14px 16px; margin-bottom: 10px;
+  }
+  .exercise-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .exercise-name { font-size: 15px; font-weight: 600; }
+  .exercise-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tag {
+    padding: 3px 10px; border-radius: var(--r-pill);
+    font-size: 11px; font-weight: 600;
+  }
+  .tag-muscle { background: var(--blue-bg); color: var(--blue); }
+  .tag-sets { background: var(--accent-glow); color: var(--accent2); }
+  .tag-weight { background: var(--amber-bg); color: var(--amber); }
+  .tag-feeling-tranquilo { background: var(--green-bg); color: var(--green); }
+  .tag-feeling-fuerte { background: var(--blue-bg); color: var(--blue); }
+  .tag-feeling-dificil { background: var(--amber-bg); color: var(--amber); }
+  .tag-feeling-fallo { background: var(--red-bg); color: var(--red); }
+
+  /* ── FEELING SELECTOR ── */
+  .feeling-selector { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .feeling-btn {
+    padding: 6px 14px; border-radius: var(--r-pill);
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--border2); background: transparent;
+    color: var(--text2); transition: all 0.18s;
+  }
+  .feeling-btn:hover { border-color: var(--border2); }
+  .feeling-btn.selected-tranquilo { background: var(--green-bg); color: var(--green); border-color: var(--green); }
+  .feeling-btn.selected-fuerte { background: var(--blue-bg); color: var(--blue); border-color: var(--blue); }
+  .feeling-btn.selected-dificil { background: var(--amber-bg); color: var(--amber); border-color: var(--amber); }
+  .feeling-btn.selected-fallo { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+
+  /* ── SESSION LOG ── */
+  .session-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-sm); padding: 14px 16px; margin-bottom: 8px;
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  }
+  .session-info { flex: 1; }
+  .session-date { font-size: 12px; color: var(--text3); margin-bottom: 3px; }
+  .session-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .session-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* ── TODAY PANEL ── */
+  .today-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 18px 20px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .stat-label { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; }
+  .stat-value { font-size: 26px; font-weight: 700; letter-spacing: -1px; }
+  .stat-sub { font-size: 12px; color: var(--text3); }
+  .stat-card.accent-green .stat-value { color: var(--green); }
+  .stat-card.accent-purple .stat-value { color: var(--accent2); }
+
+  /* ── WEEKLY VIEW ── */
+  .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .week-day {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--r-sm); padding: 10px 6px;
+    text-align: center; cursor: pointer; transition: all 0.18s;
+    min-height: 80px; display: flex; flex-direction: column; align-items: center; gap: 5px;
+  }
+  .week-day:hover { border-color: var(--border2); }
+  .week-day.has-data { border-color: rgba(108,99,255,0.3); }
+  .week-day.completed { background: var(--green-bg); border-color: rgba(34,197,94,0.3); }
+  .week-day-name { font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; }
+  .week-day-ex { font-size: 18px; font-weight: 700; color: var(--accent2); }
+  .week-day-check { font-size: 16px; }
+  .week-day-label { font-size: 9px; color: var(--text3); }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center; padding: 48px 24px;
+    color: var(--text3); border: 1px dashed var(--border2);
+    border-radius: var(--r); margin: 16px 0;
+  }
+  .empty-state-icon { font-size: 36px; margin-bottom: 12px; }
+  .empty-state h3 { font-size: 15px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
+  .empty-state p { font-size: 13px; max-width: 280px; margin: 0 auto; }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: var(--r-pill); padding: 12px 22px;
+    font-size: 13px; font-weight: 500; z-index: 1000;
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    white-space: nowrap; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.ok { border-color: rgba(34,197,94,0.4); color: var(--green); }
+  #toast.err { border-color: rgba(239,68,68,0.4); color: var(--red); }
+
+  /* ── LOG SESSION MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200;
+    display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: var(--r); padding: 28px; width: 100%; max-width: 520px;
+    max-height: 85vh; overflow-y: auto;
+  }
+  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; letter-spacing: -0.3px; }
+  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+  /* ── DIVIDER ── */
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+  /* ── FLEX HELPERS ── */
+  .flex { display: flex; }
+  .flex-between { display: flex; align-items: center; justify-content: space-between; }
+  .flex-gap { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .mt8 { margin-top: 8px; }
+  .mt16 { margin-top: 16px; }
+
+  /* ── PROGRESS TAB ── */
+  .chart-wrap { position: relative; height: 260px; margin-top: 12px; }
+
+  /* ── MUSCLE BADGE ── */
+  .muscle-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 12px; border-radius: var(--r-pill);
+    font-size: 11px; font-weight: 700; letter-spacing: 0.03em;
+  }
+  .muscle-Pecho { background: rgba(239,68,68,0.15); color: #f87171; }
+  .muscle-Espalda { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .muscle-Piernas { background: rgba(34,197,94,0.15); color: #4ade80; }
+  .muscle-Hombros { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .muscle-Brazos { background: rgba(168,85,247,0.15); color: #c084fc; }
+  .muscle-Core { background: rgba(20,184,166,0.15); color: #2dd4bf; }
+  .muscle-Gluteos { background: rgba(236,72,153,0.15); color: #f472b6; }
+  .muscle-Full { background: rgba(148,163,184,0.15); color: #94a3b8; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid.cols3 { grid-template-columns: 1fr 1fr; }
+    .today-grid { grid-template-columns: 1fr; }
+    .week-grid { grid-template-columns: repeat(4, 1fr); }
+    nav { padding: 0 16px; }
+    .page-wrap { padding: 20px 16px 80px; }
+    .nav-tabs { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">FT</div>
+    <div class="nav-title">Fit<span>Track</span></div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showTab('hoy')">Hoy</button>
+    <button class="nav-tab" onclick="showTab('rutina')">Mi Rutina</button>
+    <button class="nav-tab" onclick="showTab('historial')">Historial</button>
+    <button class="nav-tab" onclick="showTab('progreso')">Progreso</button>
+    <button class="nav-tab" onclick="showTab('metricas')">📊 Métricas</button>
+    <button class="nav-tab" onclick="showTab('nutricion')">🥗 Nutrición</button>
+  </div>
+</nav>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ════════════════════════════════════════
+     TAB: HOY
+════════════════════════════════════════ -->
+<div id="tab-hoy" class="app active">
+  <div class="page-wrap">
+    <div class="section-head">
+      <h1 id="hoy-date-title">Hoy</h1>
+      <p id="hoy-subtitle">Tu sesión de hoy</p>
+    </div>
+
+    <!-- Stats rápidas -->
+    <div class="today-grid">
+      <div class="stat-card accent-purple">
+        <span class="stat-label">Ejercicios hoy</span>
+        <span class="stat-value" id="stat-exercises-today">—</span>
+        <span class="stat-sub" id="stat-muscle-today">Sin rutina asignada</span>
+      </div>
+      <div class="stat-card accent-green">
+        <span class="stat-label">Sesiones esta semana</span>
+        <span class="stat-value" id="stat-week-sessions">0</span>
+        <span class="stat-sub" id="stat-last-session">Ninguna todavía</span>
+      </div>
+    </div>
+
+    <!-- Vista semanal -->
+    <div class="card">
+      <div class="card-title">Esta semana</div>
+      <div class="week-grid" id="week-grid"></div>
+    </div>
+
+    <!-- Rutina de hoy -->
+    <div class="card">
+      <div class="flex-between" style="margin-bottom:16px">
+        <span class="card-title" style="margin-bottom:0">Rutina de hoy</span>
+        <button class="btn btn-primary btn-sm" onclick="openLogModal()">+ Registrar sesión</button>
+      </div>
+      <div id="today-exercises-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     TAB: MI RUTINA
+════════════════════════════════════════ -->
+<div id="tab-rutina" class="app">
+  <div class="page-wrap">
+    <div class="section-head">
+      <h1>Mi Rutina</h1>
+      <p>Organiza tus ejercicios por día de la semana</p>
+    </div>
+
+    <!-- Selector de día -->
+    <div class="day-selector" id="day-selector"></div>
+
+    <!-- Formulario agregar ejercicio -->
+    <div class="card">
+      <div class="card-title">Agregar ejercicio — <span id="current-day-label" style="color:var(--accent2)">Lunes</span></div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nombre del ejercicio</label>
+          <input type="text" id="ex-name" placeholder="Ej. Press de banca"/>
+        </div>
+        <div class="form-group">
+          <label>Grupo muscular</label>
+          <select id="ex-muscle">
+            <option value="Pecho">Pecho</option>
+            <option value="Espalda">Espalda</option>
+            <option value="Piernas">Piernas</option>
+            <option value="Hombros">Hombros</option>
+            <option value="Brazos">Brazos</option>
+            <option value="Core">Core</option>
+            <option value="Gluteos">Glúteos</option>
+            <option value="Full">Full Body</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Series</label>
+          <input type="number" id="ex-sets" placeholder="4" min="1" max="20"/>
+        </div>
+        <div class="form-group">
+          <label>Repeticiones</label>
+          <input type="text" id="ex-reps" placeholder="8–12 ó 10"/>
+        </div>
+        <div class="form-group">
+          <label>Peso (kg)</label>
+          <input type="number" id="ex-weight" placeholder="60" step="0.5"/>
+        </div>
+        <div class="form-group">
+          <label>Descanso (seg)</label>
+          <input type="number" id="ex-rest" placeholder="90" step="15"/>
+        </div>
+        <div class="form-group full">
+          <label>Notas / técnica</label>
+          <textarea id="ex-notes" placeholder="Ej. Bajar hasta el pecho, codos a 45°…"></textarea>
+        </div>
+      </div>
+      <div class="mt16">
+        <button class="btn btn-primary" onclick="addExercise()">Guardar ejercicio</button>
+      </div>
+    </div>
+
+    <!-- Lista de ejercicios del día -->
+    <div id="exercises-list"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     TAB: HISTORIAL
+════════════════════════════════════════ -->
+<div id="tab-historial" class="app">
+  <div class="page-wrap">
+    <div class="section-head">
+      <h1>Historial</h1>
+      <p>Todas tus sesiones registradas</p>
+    </div>
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     TAB: PROGRESO
+════════════════════════════════════════ -->
+<div id="tab-progreso" class="app">
+  <div class="page-wrap">
+    <div class="section-head">
+      <h1>Progreso</h1>
+      <p>Evolución de tus ejercicios, consistencia e insights</p>
+    </div>
+
+    <!-- Alerta 12 semanas inline -->
+    <div id="routine-age-banner" style="display:none; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3); border-radius:var(--r); padding:16px 20px; margin-bottom:20px;">
+      <div style="display:flex; align-items:flex-start; gap:12px;">
+        <span style="font-size:22px; flex-shrink:0;">⚡</span>
+        <div style="flex:1;">
+          <div style="font-size:14px; font-weight:700; color:var(--amber); margin-bottom:4px;">¡Hora de cambiar la rutina!</div>
+          <div id="routine-age-text" style="font-size:13px; color:var(--text2); margin-bottom:10px;"></div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-sm" style="background:var(--amber-bg);color:var(--amber);border:1px solid rgba(245,158,11,0.3);" onclick="document.querySelectorAll('.nav-tab').forEach(el=>{if(el.getAttribute('onclick')?.includes('rutina'))el.click()})">Ir a Mi Rutina →</button>
+            <button class="btn btn-ghost btn-sm" onclick="dismissRoutineBanner()">Recordar después</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats resumen -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:20px;">
+      <div class="stat-card accent-purple">
+        <span class="stat-label">Total sesiones</span>
+        <span class="stat-value" id="p-total-sessions">0</span>
+        <span class="stat-sub">registradas</span>
+      </div>
+      <div class="stat-card accent-green">
+        <span class="stat-label">Racha actual</span>
+        <span class="stat-value" id="p-streak">0</span>
+        <span class="stat-sub" id="p-streak-sub">semanas</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Mejor semana</span>
+        <span class="stat-value" id="p-best-week" style="color:var(--amber)">0</span>
+        <span class="stat-sub">sesiones</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Semanas activas</span>
+        <span class="stat-value" id="p-weeks-active" style="color:var(--blue)">0</span>
+        <span class="stat-sub" id="p-weeks-sub">de seguimiento</span>
+      </div>
+    </div>
+
+    <!-- Consistencia semanal -->
+    <div class="card">
+      <div class="flex-between" style="margin-bottom:14px;">
+        <span class="card-title" style="margin-bottom:0">Consistencia semanal</span>
+        <div id="consistency-legend" style="display:flex;gap:12px;font-size:11px;color:var(--text3);align-items:center;"></div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="chart-consistency" role="img" aria-label="Gráfica de sesiones por semana">Sesiones por semana.</canvas>
+      </div>
+    </div>
+
+    <!-- Insights automáticos por ejercicio -->
+    <div class="card">
+      <div class="card-title">Insights de carga — ¿cuándo subir peso?</div>
+      <div id="insights-list">
+        <div class="empty-state"><h3>Sin datos todavía</h3><p>Registra al menos 3 sesiones para recibir insights personalizados.</p></div>
+      </div>
+    </div>
+
+    <!-- Evolución de peso por ejercicio -->
+    <div class="card">
+      <div class="card-title">Evolución de peso por ejercicio</div>
+      <div class="flex-gap" style="margin-bottom:14px">
+        <select id="progress-exercise-select" style="flex:1; max-width:320px" onchange="renderProgressChart()">
+          <option value="">Selecciona un ejercicio…</option>
+        </select>
+      </div>
+      <div id="chart-exercise-wrap" style="display:none;">
+        <div class="chart-wrap">
+          <canvas id="chart-exercise" role="img" aria-label="Evolución de peso en el ejercicio">Datos de progreso.</canvas>
+        </div>
+        <!-- Leyenda de colores sensaciones -->
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--text3);">
+          <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;"></span>Tranquilo</span>
+          <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#3b82f6;display:inline-block;"></span>Fuerte</span>
+          <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;display:inline-block;"></span>Difícil</span>
+          <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#ef4444;display:inline-block;"></span>Al fallo</span>
+        </div>
+        <div id="progress-insight" style="margin-top:14px; display:none">
+          <div style="background:var(--accent-glow); border:1px solid rgba(108,99,255,0.25); border-radius:var(--r-sm); padding:14px 16px;">
+            <div style="font-size:12px; font-weight:700; color:var(--accent2); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:5px">💡 Insight</div>
+            <div id="insight-text" style="font-size:13px; color:var(--text2);"></div>
+          </div>
+        </div>
+      </div>
+      <div id="chart-exercise-empty" class="empty-state" style="margin:0;">
+        <h3>Selecciona un ejercicio</h3>
+        <p>Elige un ejercicio del selector para ver su evolución de peso.</p>
+      </div>
+    </div>
+
+    <!-- Volumen por grupo muscular -->
+    <div class="card">
+      <div class="card-title">Volumen por grupo muscular (últimas 4 semanas)</div>
+      <div class="chart-wrap" style="height:220px">
+        <canvas id="chart-volume" role="img" aria-label="Volumen de trabajo por grupo muscular">Volumen por músculo.</canvas>
+      </div>
+    </div>
+
+    <!-- Sensaciones acumuladas -->
+    <div class="card">
+      <div class="card-title">Distribución de sensaciones</div>
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+        <div class="chart-wrap" style="height:200px; flex:1; min-width:160px;">
+          <canvas id="chart-feelings" role="img" aria-label="Distribución de cómo te has sentido en los entrenos">Distribución de sensaciones.</canvas>
+        </div>
+        <div id="feelings-stats" style="font-size:13px;color:var(--text2);display:flex;flex-direction:column;gap:8px;min-width:160px;"></div>
+      </div>
+    </div>
+
+    <!-- Historial de peso por sesión (tabla compacta) -->
+    <div class="card">
+      <div class="flex-between" style="margin-bottom:14px;">
+        <span class="card-title" style="margin-bottom:0">Récords personales</span>
+      </div>
+      <div id="pr-list">
+        <div class="empty-state" style="margin:0;"><h3>Sin datos todavía</h3><p>Aparecerán aquí cuando registres sesiones.</p></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     TAB: MÉTRICAS CORPORALES
+════════════════════════════════════════ -->
+<div id="tab-metricas" class="app">
+  <div class="page-wrap">
+    <div class="section-head">
+      <h1>Métricas corporales</h1>
+      <p>Seguimiento de composición corporal · Nutricionista: Damaris Pozo</p>
+    </div>
+
+    <!-- Latest snapshot cards -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px;" id="metrics-snapshot"></div>
+
+    <!-- Alertas activas -->
+    <div id="metrics-alerts" style="margin-bottom:16px;display:flex;flex-direction:column;gap:8px;"></div>
+
+    <!-- Meta progress -->
+    <div class="card" id="meta-card">
+      <div class="card-title">Progreso hacia la meta</div>
+      <div id="meta-content"></div>
+    </div>
+
+    <!-- Insights inteligentes -->
+    <div class="card">
+      <div class="card-title">Insights de tu evolución</div>
+      <div id="metrics-insights"></div>
+    </div>
+
+    <!-- Charts grid -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;" id="metrics-charts-grid">
+      <div class="card" style="margin-bottom:0">
+        <div class="card-title">Peso corporal (kg)</div>
+        <div style="position:relative;height:180px;"><canvas id="mc-peso" role="img" aria-label="Evolución del peso corporal">Peso corporal.</canvas></div>
+      </div>
+      <div class="card" style="margin-bottom:0">
+        <div class="card-title">% Grasa corporal</div>
+        <div style="position:relative;height:180px;"><canvas id="mc-grasa" role="img" aria-label="Evolución del porcentaje de grasa">Porcentaje de grasa.</canvas></div>
+      </div>
+      <div class="card" style="margin-bottom:0">
+        <div class="card-title">Masa muscular (kg)</div>
+        <div style="position:relative;height:180px;"><canvas id="mc-musculo" role="img" aria-label="Evolución de masa muscular">Masa muscular.</canvas></div>
+      </div>
+      <div class="card" style="margin-bottom:0">
+        <div class="card-title">IMC</div>
+        <div style="position:relative;height:180px;"><canvas id="mc-imc" role="img" aria-label="Evolución del IMC">IMC.</canvas></div>
+      </div>
+    </div>
+
+    <!-- Pliegues chart -->
+    <div class="card">
+      <div class="card-title">Pliegues cutáneos (mm)</div>
+      <div style="position:relative;height:280px;"><canvas id="mc-pliegues" role="img" aria-label="Evolución de pliegues cutáneos">Pliegues cutáneos.</canvas></div>
+    </div>
+
+    <!-- Edad metabólica + TMB -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <div class="card" style="margin-bottom:0">
+        <div class="card-title">Edad metabólica</div>
+        <div style="position:relative;height:160px;"><canvas id="mc-edadmet" role="img" aria-label="Evolución de la edad metabólica">Edad metabólica.</canvas></div>
+      </div>
+      <div class="card" style="margin-bottom:0">
+        <div class="card-title">TMB (kcal/día)</div>
+        <div style="position:relative;height:160px;"><canvas id="mc-tmb" role="img" aria-label="Evolución de la tasa metabólica basal">TMB.</canvas></div>
+      </div>
+    </div>
+
+    <!-- Tabla completa de fichas -->
+    <div class="card">
+      <div class="flex-between" style="margin-bottom:14px;">
+        <span class="card-title" style="margin-bottom:0">Todas las fichas</span>
+        <button class="btn btn-primary btn-sm" onclick="openMetricModal()">+ Nueva ficha</button>
+      </div>
+      <div id="metrics-table" style="overflow-x:auto;"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL: NUEVA FICHA -->
+<div class="modal-overlay" id="metric-modal">
+  <div class="modal">
+    <div class="modal-title">Nueva ficha de evaluación</div>
+    <div class="form-grid">
+      <div class="form-group"><label>Fecha</label><input type="date" id="m-date"/></div>
+      <div class="form-group"><label>Peso (kg)</label><input type="number" id="m-peso" placeholder="78.8" step="0.1"/></div>
+      <div class="form-group"><label>% Grasa</label><input type="number" id="m-grasa" placeholder="32.8" step="0.1"/></div>
+      <div class="form-group"><label>Masa muscular (kg)</label><input type="number" id="m-musculo" placeholder="52" step="0.1"/></div>
+      <div class="form-group"><label>IMC</label><input type="number" id="m-imc" placeholder="30" step="0.1"/></div>
+      <div class="form-group"><label>% Agua</label><input type="number" id="m-agua" placeholder="41.2" step="0.1"/></div>
+      <div class="form-group"><label>TMB (kcal)</label><input type="number" id="m-tmb" placeholder="1604"/></div>
+      <div class="form-group"><label>Edad metabólica</label><input type="number" id="m-edadmet" placeholder="41"/></div>
+      <div class="form-group"><label>% Grasa por pliegues</label><input type="number" id="m-grasapliegues" placeholder="33.3" step="0.1"/></div>
+      <div class="form-group"><label>Masa magra (lb)</label><input type="number" id="m-magra" placeholder="115"/></div>
+    </div>
+    <div class="divider"></div>
+    <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;">Pliegues (mm)</div>
+    <div class="form-grid">
+      <div class="form-group"><label>Tríceps</label><input type="number" id="m-p-triceps" placeholder="25"/></div>
+      <div class="form-group"><label>Subescapular</label><input type="number" id="m-p-subesc" placeholder="42"/></div>
+      <div class="form-group"><label>Abdominal</label><input type="number" id="m-p-abdom" placeholder="36"/></div>
+      <div class="form-group"><label>Supraespinal</label><input type="number" id="m-p-supra" placeholder="32"/></div>
+      <div class="form-group"><label>Muslo</label><input type="number" id="m-p-muslo" placeholder="33"/></div>
+      <div class="form-group"><label>Pierna</label><input type="number" id="m-p-pierna" placeholder="24"/></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeMetricModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveMetric()">Guardar ficha</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     TAB: NUTRICIÓN
+════════════════════════════════════════ -->
+<div id="tab-nutricion" class="app">
+  <div class="page-wrap">
+    <div class="section-head">
+      <h1 id="nutr-day-title">Nutrición de hoy</h1>
+      <p>Plan 1500 kcal · Damaris Pozo · <span id="nutr-day-name" style="color:var(--accent2)"></span></p>
+    </div>
+
+    <!-- Resumen del día -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px;">
+      <div class="stat-card accent-green">
+        <span class="stat-label">Completados hoy</span>
+        <span class="stat-value" id="nutr-completed-count">0/5</span>
+        <span class="stat-sub" id="nutr-completed-pct">0%</span>
+      </div>
+      <div class="stat-card accent-purple">
+        <span class="stat-label">Racha</span>
+        <span class="stat-value" id="nutr-streak">0</span>
+        <span class="stat-sub">días seguidos</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Esta semana</span>
+        <span class="stat-value" id="nutr-week-pct" style="color:var(--amber)">—</span>
+        <span class="stat-sub">de cumplimiento</span>
+      </div>
+    </div>
+
+    <!-- Selector de día -->
+    <div class="day-selector" id="nutr-day-selector"></div>
+
+    <!-- Lista de tiempos de comida -->
+    <div id="nutr-meals-list"></div>
+
+    <!-- Insights nutricionales -->
+    <div class="card" id="nutr-insights-card" style="display:none;">
+      <div class="card-title">Insights nutricionales</div>
+      <div id="nutr-insights-list"></div>
+    </div>
+
+    <!-- Historial de cumplimiento -->
+    <div class="card">
+      <div class="card-title">Historial de adherencia</div>
+      <div id="nutr-history"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: REGISTRAR COMIDA -->
+<div class="modal-overlay" id="nutr-log-modal">
+  <div class="modal">
+    <div class="modal-title" id="nutr-modal-title">Registrar comida</div>
+    <div id="nutr-modal-meal-desc" style="background:var(--surface2);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:18px;font-size:13px;color:var(--text2);line-height:1.7;"></div>
+    <div class="form-group">
+      <label>¿Cómo te sentiste?</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;" id="nutr-feeling-btns">
+        <button type="button" class="nutr-feel-btn" data-feel="saciada" onclick="selectNutrFeeling('saciada')" style="padding:10px;border-radius:var(--r-sm);border:1px solid var(--border2);background:transparent;cursor:pointer;font-size:13px;color:var(--text2);transition:all 0.18s;">😊 Saciada y bien</button>
+        <button type="button" class="nutr-feel-btn" data-feel="normal" onclick="selectNutrFeeling('normal')" style="padding:10px;border-radius:var(--r-sm);border:1px solid var(--border2);background:transparent;cursor:pointer;font-size:13px;color:var(--text2);transition:all 0.18s;">😐 Normal</button>
+        <button type="button" class="nutr-feel-btn" data-feel="hambre" onclick="selectNutrFeeling('hambre')" style="padding:10px;border-radius:var(--r-sm);border:1px solid var(--border2);background:transparent;cursor:pointer;font-size:13px;color:var(--text2);transition:all 0.18s;">😩 Con hambre</button>
+        <button type="button" class="nutr-feel-btn" data-feel="mal" onclick="selectNutrFeeling('mal')" style="padding:10px;border-radius:var(--r-sm);border:1px solid var(--border2);background:transparent;cursor:pointer;font-size:13px;color:var(--text2);transition:all 0.18s;">🤢 No me cayó bien</button>
+      </div>
+    </div>
+    <div class="form-group mt8">
+      <label>Nota opcional</label>
+      <input type="text" id="nutr-log-note" placeholder="Ej. comí menos cantidad, cambié el ingrediente…"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeNutrModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveNutrLog()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MODAL: REGISTRAR SESIÓN
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="log-modal">
+  <div class="modal">
+    <div class="modal-title">Registrar sesión de hoy</div>
+
+    <div id="log-exercises-form"></div>
+
+    <div class="divider"></div>
+
+    <div class="form-group">
+      <label>Notas generales de la sesión</label>
+      <textarea id="log-session-notes" placeholder="¿Cómo fue el entreno en general? ¿Algo que destacar?"></textarea>
+    </div>
+
+    <div class="form-group mt8">
+      <label>¿Completaste la rutina?</label>
+      <select id="log-completed">
+        <option value="si">✅ Sí, rutina completa</option>
+        <option value="parcial">⚠️ Parcialmente</option>
+        <option value="no">❌ No la completé</option>
+      </select>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeLogModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveSession()">Guardar sesión</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// DATOS Y HELPERS
+// ══════════════════════════════════════════
+const DAYS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+const DAYS_SHORT = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+const FEELINGS = [
+  { id: 'tranquilo', label: '😌 Tranquilo' },
+  { id: 'fuerte',   label: '💪 Fuerte' },
+  { id: 'dificil',  label: '😓 Difícil' },
+  { id: 'fallo',    label: '🔥 Llegué al fallo' },
+];
+
+let currentDay = 'Lunes';
+let exerciseChart = null;
+let consistencyChart = null;
+let feelingsChart = null;
+
+function load(key, def) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch { return def; }
+}
+function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+function getData()     { return load('ft_routine', {}); }
+function getSessions() { return load('ft_sessions', []); }
+
+function saveData(d)     { save('ft_routine', d); }
+function saveSessions(s) { save('ft_sessions', s); }
+
+function todayKey() {
+  const d = new Date();
+  return d.toISOString().split('T')[0];
+}
+
+function todayDayName() {
+  const idx = (new Date().getDay() + 6) % 7; // Monday=0
+  return DAYS[idx];
+}
+
+function formatDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long' });
+}
+
+function showToast(msg, type = 'ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `show ${type}`;
+  setTimeout(() => t.className = '', 2500);
+}
+
+// ══════════════════════════════════════════
+// NAV / TABS
+// ══════════════════════════════════════════
+function showTab(tab) {
+  document.querySelectorAll('.app').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  event.currentTarget.classList.add('active');
+
+  if (tab === 'rutina')   renderRoutineTab();
+  if (tab === 'historial') renderHistorialTab();
+  if (tab === 'metricas') renderMetricasTab();
+  if (tab === 'nutricion') renderNutricionTab();
+  if (tab === 'progreso') {
+    renderProgressSelects();
+    renderProgressStats();
+    renderRoutineAgeBanner();
+    renderInsights();
+    renderConsistencyChart();
+    renderVolumeChart();
+    renderFeelingsChart();
+    renderPRs();
+    renderProgressChart();
+  }
+  if (tab === 'hoy')      renderHoy();
+}
+
+// Mobile nav tap — also used in day cards
+function switchToTab(name) {
+  const tabs = {hoy:'Hoy',rutina:'Mi Rutina',historial:'Historial',progreso:'Progreso'};
+  document.querySelectorAll('.nav-tab').forEach((el,i) => {
+    const keys = Object.keys(tabs);
+    if (el.textContent.trim() === tabs[keys[i]] || el.onclick?.toString().includes(keys[i])) {
+      el.classList.remove('active');
+    }
+  });
+  document.querySelectorAll('.app').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(el => {
+    if (el.getAttribute('onclick')?.includes("'" + name + "'")) el.classList.add('active');
+  });
+}
+
+// ══════════════════════════════════════════
+// TAB: HOY
+// ══════════════════════════════════════════
+function renderHoy() {
+  const dayName = todayDayName();
+  const todayISO = todayKey();
+  const data = getData();
+  const sessions = getSessions();
+
+  // Fecha
+  const d = new Date();
+  document.getElementById('hoy-date-title').textContent =
+    d.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'}).replace(/^\w/, c => c.toUpperCase());
+
+  // Ejercicios hoy
+  const exs = data[dayName] || [];
+  document.getElementById('stat-exercises-today').textContent = exs.length || '—';
+  const muscles = [...new Set(exs.map(e => e.muscle))];
+  document.getElementById('stat-muscle-today').textContent = muscles.length ? muscles.join(', ') : 'Sin rutina asignada';
+
+  // Sesiones esta semana
+  const weekStart = new Date(d);
+  weekStart.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  weekStart.setHours(0,0,0,0);
+  const weekSessions = sessions.filter(s => new Date(s.date) >= weekStart);
+  document.getElementById('stat-week-sessions').textContent = weekSessions.length;
+
+  const lastSession = sessions.sort((a,b) => new Date(b.date)-new Date(a.date))[0];
+  document.getElementById('stat-last-session').textContent = lastSession
+    ? 'Última: ' + formatDate(lastSession.date)
+    : 'Ninguna todavía';
+
+  // Vista semanal
+  const wg = document.getElementById('week-grid');
+  wg.innerHTML = '';
+  DAYS.forEach((day, i) => {
+    const dayExs = data[day] || [];
+    const hasSession = sessions.some(s => {
+      const sd = new Date(s.date);
+      const idx = (sd.getDay() + 6) % 7;
+      return DAYS[idx] === day && new Date(sd) >= weekStart;
+    });
+    const isToday = day === dayName;
+    const div = document.createElement('div');
+    div.className = 'week-day' + (dayExs.length ? ' has-data' : '') + (hasSession ? ' completed' : '');
+    div.innerHTML = `
+      <span class="week-day-name">${DAYS_SHORT[i]}</span>
+      ${dayExs.length ? `<span class="week-day-ex">${dayExs.length}</span><span class="week-day-label">ejercicios</span>` : '<span class="week-day-label" style="color:var(--text3);margin-top:6px">libre</span>'}
+      ${hasSession ? '<span class="week-day-check">✅</span>' : (isToday && dayExs.length ? '<span class="week-day-check">👟</span>' : '')}
+    `;
+    wg.appendChild(div);
+  });
+
+  // Lista de ejercicios de hoy
+  const list = document.getElementById('today-exercises-list');
+  list.innerHTML = '';
+  if (!exs.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🏖️</div><h3>Día de descanso</h3><p>No hay ejercicios para hoy. ¡Disfruta el descanso!</p></div>`;
+    return;
+  }
+  exs.forEach(ex => {
+    const div = document.createElement('div');
+    div.className = 'exercise-item';
+    div.innerHTML = `
+      <div class="exercise-header">
+        <span class="exercise-name">${ex.name}</span>
+        <span class="muscle-badge muscle-${ex.muscle}">${ex.muscle}</span>
+      </div>
+      <div class="exercise-meta">
+        <span class="tag tag-sets">${ex.sets} series</span>
+        <span class="tag tag-sets" style="background:rgba(255,255,255,0.06);color:var(--text2)">${ex.reps} reps</span>
+        ${ex.weight ? `<span class="tag tag-weight">⚖️ ${ex.weight} kg</span>` : ''}
+        ${ex.rest ? `<span class="tag tag-sets" style="background:rgba(255,255,255,0.04);color:var(--text3)">⏱ ${ex.rest}s descanso</span>` : ''}
+      </div>
+      ${ex.notes ? `<div style="font-size:12px;color:var(--text3);margin-top:8px">${ex.notes}</div>` : ''}
+    `;
+    list.appendChild(div);
+  });
+}
+
+// ══════════════════════════════════════════
+// TAB: RUTINA
+// ══════════════════════════════════════════
+function renderRoutineTab() {
+  const data = getData();
+
+  // Day selector
+  const ds = document.getElementById('day-selector');
+  ds.innerHTML = '';
+  DAYS.forEach(day => {
+    const btn = document.createElement('button');
+    const exs = data[day] || [];
+    btn.className = 'day-btn' + (day === currentDay ? ' active' : '') + (exs.length ? ' has-exercises' : '');
+    btn.textContent = day;
+    btn.onclick = () => { currentDay = day; renderRoutineTab(); };
+    ds.appendChild(btn);
+  });
+
+  document.getElementById('current-day-label').textContent = currentDay;
+  renderExerciseList();
+}
+
+function renderExerciseList() {
+  const data = getData();
+  const exs = data[currentDay] || [];
+  const list = document.getElementById('exercises-list');
+  list.innerHTML = '';
+
+  if (!exs.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">➕</div><h3>Sin ejercicios para el ${currentDay}</h3><p>Agrega tu primer ejercicio usando el formulario de arriba.</p></div>`;
+    return;
+  }
+
+  exs.forEach((ex, i) => {
+    const div = document.createElement('div');
+    div.className = 'exercise-item';
+    div.innerHTML = `
+      <div class="exercise-header">
+        <span class="exercise-name">${ex.name}</span>
+        <div class="flex-gap">
+          <span class="muscle-badge muscle-${ex.muscle}">${ex.muscle}</span>
+          <button class="btn btn-danger btn-sm btn-icon" onclick="deleteExercise('${currentDay}', ${i})" title="Eliminar">✕</button>
+        </div>
+      </div>
+      <div class="exercise-meta">
+        <span class="tag tag-sets">${ex.sets} series × ${ex.reps} reps</span>
+        ${ex.weight ? `<span class="tag tag-weight">⚖️ ${ex.weight} kg</span>` : '<span class="tag tag-weight" style="background:rgba(255,255,255,0.05);color:var(--text3)">Sin peso</span>'}
+        ${ex.rest ? `<span class="tag tag-sets" style="background:rgba(255,255,255,0.04);color:var(--text3)">⏱ ${ex.rest}s</span>` : ''}
+      </div>
+      ${ex.notes ? `<div style="font-size:12px;color:var(--text3);margin-top:8px;font-style:italic">"${ex.notes}"</div>` : ''}
+    `;
+    list.appendChild(div);
+  });
+}
+
+function addExercise() {
+  const name   = document.getElementById('ex-name').value.trim();
+  const muscle = document.getElementById('ex-muscle').value;
+  const sets   = document.getElementById('ex-sets').value.trim();
+  const reps   = document.getElementById('ex-reps').value.trim();
+  const weight = document.getElementById('ex-weight').value.trim();
+  const rest   = document.getElementById('ex-rest').value.trim();
+  const notes  = document.getElementById('ex-notes').value.trim();
+
+  if (!name || !sets || !reps) { showToast('Llena nombre, series y reps', 'err'); return; }
+
+  const data = getData();
+  if (!data[currentDay]) data[currentDay] = [];
+  data[currentDay].push({ name, muscle, sets, reps,
+    weight: weight ? parseFloat(weight) : null,
+    rest: rest ? parseInt(rest) : null,
+    notes, addedAt: new Date().toISOString()
+  });
+  saveData(data);
+
+  // Limpiar form
+  ['ex-name','ex-sets','ex-reps','ex-weight','ex-rest','ex-notes'].forEach(id => document.getElementById(id).value = '');
+  showToast(`"${name}" agregado a ${currentDay} ✅`);
+  renderRoutineTab();
+}
+
+function deleteExercise(day, index) {
+  const data = getData();
+  data[day].splice(index, 1);
+  saveData(data);
+  showToast('Ejercicio eliminado');
+  renderRoutineTab();
+}
+
+// ══════════════════════════════════════════
+// MODAL: REGISTRAR SESIÓN
+// ══════════════════════════════════════════
+function openLogModal() {
+  const dayName = todayDayName();
+  const data = getData();
+  const exs = data[dayName] || [];
+  const form = document.getElementById('log-exercises-form');
+  form.innerHTML = '';
+
+  if (!exs.length) {
+    form.innerHTML = `<div class="empty-state"><h3>No hay ejercicios para hoy</h3><p>Primero agrega tu rutina en la pestaña "Mi Rutina".</p></div>`;
+  } else {
+    exs.forEach((ex, i) => {
+      const div = document.createElement('div');
+      div.style.cssText = 'margin-bottom:18px; border:1px solid var(--border); border-radius:var(--r-sm); padding:14px 16px; background:var(--surface2)';
+      div.innerHTML = `
+        <div class="flex-between" style="margin-bottom:10px">
+          <div>
+            <span style="font-weight:600; font-size:14px">${ex.name}</span>
+            <span class="muscle-badge muscle-${ex.muscle}" style="margin-left:8px">${ex.muscle}</span>
+          </div>
+          <span class="tag tag-sets">${ex.sets}×${ex.reps}</span>
+        </div>
+        <div class="form-grid cols3" style="margin-bottom:10px">
+          <div class="form-group">
+            <label>Peso usado (kg)</label>
+            <input type="number" id="log-weight-${i}" value="${ex.weight || ''}" placeholder="${ex.weight || '—'}" step="0.5"/>
+          </div>
+          <div class="form-group">
+            <label>Series hechas</label>
+            <input type="number" id="log-sets-${i}" value="${ex.sets}" min="1" max="20"/>
+          </div>
+          <div class="form-group">
+            <label>Reps (última)</label>
+            <input type="text" id="log-reps-${i}" value="${ex.reps}" placeholder="${ex.reps}"/>
+          </div>
+        </div>
+        <div>
+          <label style="display:block;margin-bottom:6px;font-size:12px;font-weight:600;color:var(--text2);">¿Cómo te sentiste?</label>
+          <div class="feeling-selector" id="feeling-${i}">
+            ${FEELINGS.map(f => `<button type="button" class="feeling-btn" data-idx="${i}" data-feeling="${f.id}" onclick="selectFeeling(${i},'${f.id}')">${f.label}</button>`).join('')}
+          </div>
+        </div>
+      `;
+      form.appendChild(div);
+    });
+  }
+
+  document.getElementById('log-session-notes').value = '';
+  document.getElementById('log-completed').value = 'si';
+  document.getElementById('log-modal').classList.add('open');
+}
+
+function selectFeeling(idx, feeling) {
+  document.querySelectorAll(`#feeling-${idx} .feeling-btn`).forEach(btn => {
+    btn.className = 'feeling-btn';
+  });
+  const btn = document.querySelector(`#feeling-${idx} [data-feeling="${feeling}"]`);
+  if (btn) btn.classList.add(`selected-${feeling}`);
+}
+
+function closeLogModal() {
+  document.getElementById('log-modal').classList.remove('open');
+}
+
+function saveSession() {
+  const dayName = todayDayName();
+  const data = getData();
+  const exs = data[dayName] || [];
+  const notes = document.getElementById('log-session-notes').value.trim();
+  const completed = document.getElementById('log-completed').value;
+
+  const exerciseLogs = exs.map((ex, i) => {
+    const weightEl = document.getElementById(`log-weight-${i}`);
+    const setsEl   = document.getElementById(`log-sets-${i}`);
+    const repsEl   = document.getElementById(`log-reps-${i}`);
+    const feelingEl = document.querySelector(`#feeling-${i} .feeling-btn[class*="selected"]`);
+    return {
+      name: ex.name, muscle: ex.muscle,
+      weight: weightEl ? parseFloat(weightEl.value) || null : null,
+      sets: setsEl ? parseInt(setsEl.value) || ex.sets : ex.sets,
+      reps: repsEl ? repsEl.value || ex.reps : ex.reps,
+      feeling: feelingEl ? feelingEl.getAttribute('data-feeling') : null,
+      plannedWeight: ex.weight,
+    };
+  });
+
+  const sessions = getSessions();
+  sessions.push({
+    date: todayKey(),
+    day: dayName,
+    exercises: exerciseLogs,
+    notes,
+    completed,
+    savedAt: new Date().toISOString()
+  });
+  saveSessions(sessions);
+
+  closeLogModal();
+  showToast('Sesión guardada 💪');
+  renderHoy();
+}
+
+// ══════════════════════════════════════════
+// TAB: HISTORIAL
+// ══════════════════════════════════════════
+function renderHistorialTab() {
+  const sessions = getSessions().sort((a,b) => new Date(b.date)-new Date(a.date));
+  const list = document.getElementById('history-list');
+  list.innerHTML = '';
+
+  if (!sessions.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><h3>Sin sesiones todavía</h3><p>Registra tu primera sesión en la pestaña "Hoy".</p></div>`;
+    return;
+  }
+
+  sessions.forEach(s => {
+    const muscles = [...new Set(s.exercises.map(e => e.muscle))];
+    const feelings = s.exercises.map(e => e.feeling).filter(Boolean);
+    const div = document.createElement('div');
+    div.className = 'session-item';
+    div.innerHTML = `
+      <div class="session-info">
+        <div class="session-date">${formatDate(s.date)}</div>
+        <div class="session-title">${s.day} — ${s.exercises.length} ejercicios</div>
+        <div class="session-tags">
+          ${muscles.map(m => `<span class="muscle-badge muscle-${m}">${m}</span>`).join('')}
+          ${feelings.map(f => `<span class="tag tag-feeling-${f}">${FEELINGS.find(x=>x.id===f)?.label||f}</span>`).join('')}
+          <span class="tag" style="background:${s.completed==='si'?'var(--green-bg)':s.completed==='parcial'?'var(--amber-bg)':'var(--red-bg)'}; color:${s.completed==='si'?'var(--green)':s.completed==='parcial'?'var(--amber)':'var(--red)'}">${s.completed==='si'?'✅ Completa':s.completed==='parcial'?'⚠️ Parcial':'❌ Incompleta'}</span>
+        </div>
+        ${s.notes ? `<div style="font-size:12px;color:var(--text3);margin-top:6px;font-style:italic">"${s.notes}"</div>` : ''}
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+// ══════════════════════════════════════════
+// TAB: PROGRESO
+// ══════════════════════════════════════════
+function renderProgressSelects() {
+  const data = getData();
+  const sel = document.getElementById('progress-exercise-select');
+  const all = [];
+  Object.values(data).forEach(exs => exs.forEach(e => { if (!all.includes(e.name)) all.push(e.name); }));
+  sel.innerHTML = '<option value="">Selecciona un ejercicio…</option>' + all.map(n => `<option value="${n}">${n}</option>`).join('');
+}
+
+// ── Stats summary ──
+function renderProgressStats() {
+  const sessions = getSessions().sort((a,b) => new Date(a.date)-new Date(b.date));
+  document.getElementById('p-total-sessions').textContent = sessions.length;
+
+  // Best week
+  const weekMap = {};
+  sessions.forEach(s => {
+    const d = new Date(s.date);
+    const sw = new Date(d); sw.setDate(d.getDate()-((d.getDay()+6)%7)); sw.setHours(0,0,0,0);
+    const k = sw.toISOString().split('T')[0];
+    weekMap[k] = (weekMap[k]||0)+1;
+  });
+  const weekCounts = Object.values(weekMap);
+  document.getElementById('p-best-week').textContent = weekCounts.length ? Math.max(...weekCounts) : 0;
+  document.getElementById('p-weeks-active').textContent = Object.keys(weekMap).length;
+
+  // Streak (consecutive weeks with at least 1 session)
+  const sortedWeeks = Object.keys(weekMap).sort();
+  let streak = 0;
+  if (sortedWeeks.length) {
+    streak = 1;
+    for (let i = sortedWeeks.length-1; i > 0; i--) {
+      const curr = new Date(sortedWeeks[i]);
+      const prev = new Date(sortedWeeks[i-1]);
+      const diff = (curr-prev)/(7*24*60*60*1000);
+      if (Math.round(diff) === 1) streak++;
+      else break;
+    }
+  }
+  document.getElementById('p-streak').textContent = streak;
+  document.getElementById('p-streak-sub').textContent = streak === 1 ? 'semana seguida' : 'semanas seguidas';
+}
+
+// ── Routine age banner ──
+function renderRoutineAgeBanner() {
+  const data = getData();
+  const oldest = Object.values(data).flat().map(e => e.addedAt).filter(Boolean).sort()[0];
+  if (!oldest) return;
+  const weeks = Math.floor((Date.now() - new Date(oldest)) / (7*24*60*60*1000));
+  const dismissed = load('ft_routine_banner_dismissed', null);
+  const banner = document.getElementById('routine-age-banner');
+  if (weeks >= 12 && dismissed !== oldest) {
+    document.getElementById('routine-age-text').textContent =
+      `Llevas ${weeks} semanas con la misma rutina. El cuerpo se adapta alrededor de las 12 semanas y puede que ya no estés progresando igual. Considera cambiar ejercicios, orden, o técnicas de intensidad.`;
+    banner.style.display = 'block';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+function dismissRoutineBanner() {
+  const data = getData();
+  const oldest = Object.values(data).flat().map(e => e.addedAt).filter(Boolean).sort()[0];
+  save('ft_routine_banner_dismissed', oldest);
+  document.getElementById('routine-age-banner').style.display = 'none';
+  showToast('Te recordamos en la próxima visita');
+}
+
+// ── Insights por ejercicio ──
+function renderInsights() {
+  const sessions = getSessions().sort((a,b) => new Date(a.date)-new Date(b.date));
+  const exMap = {};
+  sessions.forEach(s => {
+    s.exercises.forEach(e => {
+      if (!e.weight) return;
+      if (!exMap[e.name]) exMap[e.name] = [];
+      exMap[e.name].push({ date: s.date, weight: e.weight, feeling: e.feeling });
+    });
+  });
+
+  const container = document.getElementById('insights-list');
+  const entries = Object.entries(exMap).filter(([,pts]) => pts.length >= 2);
+  if (!entries.length) {
+    container.innerHTML = `<div class="empty-state" style="margin:0;"><h3>Sin datos todavía</h3><p>Registra al menos 3 sesiones para recibir insights personalizados.</p></div>`;
+    return;
+  }
+
+  container.innerHTML = '';
+  entries.forEach(([name, pts]) => {
+    const last = pts[pts.length-1];
+    const prev = pts[pts.length-2];
+    const last3 = pts.slice(-3);
+    const easyCount = last3.filter(p => p.feeling==='tranquilo'||p.feeling==='fuerte').length;
+    const failCount = last3.filter(p => p.feeling==='fallo').length;
+    const hardCount = last3.filter(p => p.feeling==='dificil').length;
+    const weightGain = last.weight - pts[0].weight;
+
+    let rec, recColor, recIcon, recBg;
+    if (easyCount >= 2 && last3.length >= 2) {
+      rec = `Subir peso — sientes ${name} fácil en las últimas ${last3.length} sesiones. Prueba +2.5 kg.`;
+      recColor = '#22c55e'; recIcon = '⬆️'; recBg = 'var(--green-bg)';
+    } else if (failCount >= 2) {
+      rec = `Mantener peso — llegaste al fallo en ${failCount} de las últimas ${last3.length} sesiones. Consolida antes de subir.`;
+      recColor = 'var(--red)'; recIcon = '⏸️'; recBg = 'var(--red-bg)';
+    } else if (hardCount >= 2) {
+      rec = `Mantener o bajar — ${name} está resultando difícil. Asegúrate de que la técnica sea correcta primero.`;
+      recColor = 'var(--amber)'; recIcon = '⚠️'; recBg = 'var(--amber-bg)';
+    } else if (pts.length >= 4 && last.weight === prev.weight && last.feeling !== 'fallo') {
+      rec = `Considera subir peso — llevas varias sesiones estable en ${last.weight} kg sin llegar al fallo.`;
+      recColor = 'var(--blue)'; recIcon = '💡'; recBg = 'var(--blue-bg)';
+    } else {
+      rec = `Sigue registrando — necesitas más datos para generar un insight confiable.`;
+      recColor = 'var(--text3)'; recIcon = '📊'; recBg = 'var(--surface2)';
+    }
+
+    const div = document.createElement('div');
+    div.style.cssText = `display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:var(--r-sm);background:${recBg};border:1px solid rgba(255,255,255,0.06);margin-bottom:8px;`;
+    div.innerHTML = `
+      <span style="font-size:18px;flex-shrink:0;">${recIcon}</span>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:700;color:${recColor};margin-bottom:2px;">${name}</div>
+        <div style="font-size:12px;color:var(--text2);">${rec}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px;">
+          Peso actual: ${last.weight} kg · ${pts.length} sesiones registradas
+          ${weightGain > 0 ? ` · +${weightGain.toFixed(1)} kg desde el inicio 📈` : ''}
+        </div>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+// ── Récords personales ──
+function renderPRs() {
+  const sessions = getSessions().sort((a,b) => new Date(a.date)-new Date(b.date));
+  const prMap = {};
+  sessions.forEach(s => {
+    s.exercises.forEach(e => {
+      if (!e.weight) return;
+      if (!prMap[e.name] || e.weight > prMap[e.name].weight) {
+        prMap[e.name] = { weight: e.weight, date: s.date, muscle: e.muscle };
+      }
+    });
+  });
+
+  const container = document.getElementById('pr-list');
+  const prs = Object.entries(prMap).sort((a,b) => b[1].weight - a[1].weight);
+  if (!prs.length) {
+    container.innerHTML = `<div class="empty-state" style="margin:0;"><h3>Sin datos todavía</h3><p>Aparecerán aquí cuando registres sesiones.</p></div>`;
+    return;
+  }
+
+  container.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;">` +
+    prs.map(([name, pr]) => `
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">${pr.muscle}</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${name}">${name}</div>
+        <div style="font-size:20px;font-weight:700;color:var(--amber);">${pr.weight} kg</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px;">${formatDate(pr.date)}</div>
+      </div>`).join('') + '</div>';
+}
+
+function renderConsistencyChart() {
+  const sessions = getSessions();
+  const weekMap = {};
+  sessions.forEach(s => {
+    const d = new Date(s.date);
+    const startOfWeek = new Date(d);
+    startOfWeek.setDate(d.getDate() - ((d.getDay()+6)%7));
+    const key = startOfWeek.toISOString().split('T')[0];
+    weekMap[key] = (weekMap[key] || 0) + 1;
+  });
+
+  const keys = Object.keys(weekMap).sort().slice(-12);
+  const labels = keys.map(k => {
+    const d = new Date(k);
+    return d.toLocaleDateString('es-ES', {day:'numeric', month:'short'});
+  });
+  const values = keys.map(k => weekMap[k]);
+  const goalLine = keys.map(() => 5);
+
+  if (consistencyChart) { consistencyChart.destroy(); consistencyChart = null; }
+
+  // Legend
+  const legend = document.getElementById('consistency-legend');
+  if (legend) legend.innerHTML = `
+    <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:rgba(108,99,255,0.7);display:inline-block;"></span>Sesiones</span>
+    <span style="display:flex;align-items:center;gap:4px;"><span style="width:18px;height:2px;background:#f59e0b;display:inline-block;border-radius:1px;"></span>Meta (5/sem)</span>`;
+
+  if (!keys.length) return;
+
+  consistencyChart = new Chart(document.getElementById('chart-consistency'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Sesiones',
+          data: values,
+          backgroundColor: values.map(v => v >= 5 ? 'rgba(34,197,94,0.7)' : 'rgba(108,99,255,0.65)'),
+          borderColor:      values.map(v => v >= 5 ? '#22c55e' : '#6c63ff'),
+          borderWidth: 1, borderRadius: 6, order: 2,
+        },
+        {
+          label: 'Meta',
+          data: goalLine,
+          type: 'line',
+          borderColor: '#f59e0b',
+          borderWidth: 1.5,
+          borderDash: [4,4],
+          pointRadius: 0,
+          fill: false,
+          order: 1,
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8b93a8', font: { size: 11 }, autoSkip: false, maxRotation: 45 } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8b93a8', stepSize: 1, font: { size: 11 } }, min: 0, max: Math.max(7, ...values)+1 }
+      }
+    }
+  });
+}
+
+function renderVolumeChart() {
+  const sessions = getSessions().sort((a,b) => new Date(b.date)-new Date(a.date));
+  // Last 4 weeks
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 28);
+  const recent = sessions.filter(s => new Date(s.date) >= cutoff);
+  const muscleMap = {};
+  recent.forEach(s => s.exercises.forEach(e => {
+    const sets = parseInt(e.sets)||0;
+    muscleMap[e.muscle] = (muscleMap[e.muscle]||0) + sets;
+  }));
+
+  const labels = Object.keys(muscleMap);
+  const values = labels.map(k => muscleMap[k]);
+  const colors = {
+    Pecho:'rgba(239,68,68,0.7)', Espalda:'rgba(59,130,246,0.7)', Piernas:'rgba(34,197,94,0.7)',
+    Hombros:'rgba(245,158,11,0.7)', Brazos:'rgba(168,85,247,0.7)', Core:'rgba(20,184,166,0.7)',
+    Gluteos:'rgba(236,72,153,0.7)', Full:'rgba(148,163,184,0.7)'
+  };
+
+  if (!labels.length) return;
+  if (window._volChart) { window._volChart.destroy(); window._volChart = null; }
+
+  window._volChart = new Chart(document.getElementById('chart-volume'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Series totales',
+        data: values,
+        backgroundColor: labels.map(l => colors[l]||'rgba(108,99,255,0.6)'),
+        borderRadius: 6,
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8b93a8', font: { size: 11 } } },
+        y: { grid: { display: false }, ticks: { color: '#e2e8f0', font: { size: 12 } } }
+      }
+    }
+  });
+}
+
+function renderProgressChart() {
+  const exName = document.getElementById('progress-exercise-select').value;
+  const insightEl = document.getElementById('progress-insight');
+  const insightText = document.getElementById('insight-text');
+  const chartWrap = document.getElementById('chart-exercise-wrap');
+  const chartEmpty = document.getElementById('chart-exercise-empty');
+  if (exerciseChart) { exerciseChart.destroy(); exerciseChart = null; }
+
+  if (!exName) {
+    insightEl.style.display = 'none';
+    chartWrap.style.display = 'none';
+    chartEmpty.style.display = 'block';
+    return;
+  }
+  chartWrap.style.display = 'block';
+  chartEmpty.style.display = 'none';
+
+  const sessions = getSessions().sort((a,b) => new Date(a.date)-new Date(b.date));
+  const points = [];
+  sessions.forEach(s => {
+    s.exercises.forEach(e => {
+      if (e.name === exName && e.weight) {
+        points.push({ date: s.date, weight: e.weight, feeling: e.feeling });
+      }
+    });
+  });
+
+  if (!points.length) { insightEl.style.display = 'none'; return; }
+
+  const labels = points.map(p => {
+    const d = new Date(p.date);
+    return d.toLocaleDateString('es-ES', {day:'numeric', month:'short'});
+  });
+  const weights = points.map(p => p.weight);
+  const feelings = points.map(p => p.feeling);
+
+  const pointColors = feelings.map(f => {
+    if (f === 'tranquilo') return '#22c55e';
+    if (f === 'fuerte')    return '#3b82f6';
+    if (f === 'dificil')   return '#f59e0b';
+    if (f === 'fallo')     return '#ef4444';
+    return '#6c63ff';
+  });
+
+  // Trend line (simple linear regression)
+  const n = weights.length;
+  const xMean = (n-1)/2;
+  const yMean = weights.reduce((a,b)=>a+b,0)/n;
+  let num=0, den=0;
+  weights.forEach((y,i) => { num += (i-xMean)*(y-yMean); den += (i-xMean)**2; });
+  const slope = den ? num/den : 0;
+  const intercept = yMean - slope*xMean;
+  const trendData = weights.map((_,i) => parseFloat((intercept + slope*i).toFixed(2)));
+
+  exerciseChart = new Chart(document.getElementById('chart-exercise'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Peso (kg)',
+          data: weights,
+          borderColor: '#6c63ff',
+          backgroundColor: 'rgba(108,99,255,0.08)',
+          fill: true, tension: 0.3,
+          pointBackgroundColor: pointColors,
+          pointBorderColor: '#181c25',
+          pointBorderWidth: 2,
+          pointRadius: 7, pointHoverRadius: 9,
+          order: 1,
+        },
+        {
+          label: 'Tendencia',
+          data: trendData,
+          borderColor: 'rgba(245,158,11,0.6)',
+          borderWidth: 1.5,
+          borderDash: [5,5],
+          pointRadius: 0,
+          fill: false, tension: 0,
+          order: 2,
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            afterBody: (ctx) => {
+              const f = feelings[ctx[0].dataIndex];
+              return f ? [`Sensación: ${FEELINGS.find(x=>x.id===f)?.label || f}`] : [];
+            }
+          }
+        }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8b93a8', font: { size: 11 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8b93a8', font: { size: 11 } } }
+      }
+    }
+  });
+
+  // Insight
+  insightEl.style.display = 'block';
+  const last3 = points.slice(-3);
+  const easyCount = last3.filter(p => p.feeling==='tranquilo'||p.feeling==='fuerte').length;
+  const failCount = last3.filter(p => p.feeling==='fallo').length;
+  const lastWeight = weights[weights.length-1];
+  const gained = lastWeight - weights[0];
+  const trendDir = slope > 0.05 ? 'subiendo' : slope < -0.05 ? 'bajando' : 'estable';
+
+  if (easyCount >= 2 && last3.length >= 2) {
+    insightText.textContent = `Estás manejando bien este ejercicio. Tendencia de carga ${trendDir}. Buena señal para subir 2.5 kg la próxima sesión.`;
+  } else if (failCount >= 2) {
+    insightText.textContent = `Alcanzaste el fallo en ${failCount} de las últimas ${last3.length} sesiones. Mantén el peso y enfócate en la técnica antes de subir.`;
+  } else if (gained > 0) {
+    insightText.textContent = `Has progresado +${gained.toFixed(1)} kg desde el inicio. Tendencia general ${trendDir}. ¡Sigue así!`;
+  } else {
+    insightText.textContent = `Registra más sesiones para recibir un insight más preciso. Tendencia actual: ${trendDir}.`;
+  }
+}
+
+function renderFeelingsChart() {
+  const sessions = getSessions();
+  const count = { tranquilo: 0, fuerte: 0, dificil: 0, fallo: 0 };
+  sessions.forEach(s => s.exercises.forEach(e => { if (e.feeling && count[e.feeling] !== undefined) count[e.feeling]++; }));
+
+  if (feelingsChart) { feelingsChart.destroy(); feelingsChart = null; }
+  const total = Object.values(count).reduce((a,b) => a+b, 0);
+
+  // Stats text
+  const statsEl = document.getElementById('feelings-stats');
+  if (statsEl && total) {
+    const best = Object.entries(count).sort((a,b)=>b[1]-a[1])[0];
+    const pct = v => total ? Math.round(v/total*100) : 0;
+    statsEl.innerHTML = `
+      <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">Total registros: <strong style="color:var(--text)">${total}</strong></div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${[['tranquilo','😌','#22c55e'],['fuerte','💪','#3b82f6'],['dificil','😓','#f59e0b'],['fallo','🔥','#ef4444']].map(([id,em,color])=>`
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span>${em}</span>
+            <div style="flex:1;background:var(--surface3);border-radius:4px;height:6px;overflow:hidden;">
+              <div style="width:${pct(count[id])}%;height:100%;background:${color};border-radius:4px;"></div>
+            </div>
+            <span style="font-size:11px;color:var(--text3);min-width:30px;text-align:right;">${pct(count[id])}%</span>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  if (!total) return;
+  feelingsChart = new Chart(document.getElementById('chart-feelings'), {
+    type: 'doughnut',
+    data: {
+      labels: ['😌 Tranquilo', '💪 Fuerte', '😓 Difícil', '🔥 Al fallo'],
+      datasets: [{
+        data: [count.tranquilo, count.fuerte, count.dificil, count.fallo],
+        backgroundColor: ['#22c55e','#3b82f6','#f59e0b','#ef4444'],
+        borderColor: '#181c25', borderWidth: 3,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '70%',
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+// NOTIFICACIÓN 12 SEMANAS (init check)
+// ══════════════════════════════════════════
+function checkRoutineAge() {
+  const data = getData();
+  const oldest = Object.values(data).flat().map(e => e.addedAt).filter(Boolean).sort()[0];
+  if (!oldest) return;
+  const weeks = Math.floor((Date.now() - new Date(oldest)) / (7*24*60*60*1000));
+  const dismissed = load('ft_routine_banner_dismissed', null);
+  if (weeks >= 12 && dismissed !== oldest) {
+    setTimeout(() => showToast('⚡ +12 semanas con la misma rutina — revisa la pestaña Progreso'), 1500);
+  }
+}
+
+// ══════════════════════════════════════════
+// MÉTRICAS CORPORALES
+// ══════════════════════════════════════════
+function getMetrics() { return load('ft_metrics', []); }
+function saveMetrics(m) { save('ft_metrics', m); }
+
+const METRIC_CHARTS = {};
+
+function preloadMetrics() {
+  if (load('ft_metrics_preloaded', false)) return;
+  const data = [
+    {
+      date: '2026-03-31',
+      peso: 77.5, imc: 29.5, agua: 41.5, masaOsea: 2.7,
+      tmb: 1602, edadMet: 45, grasa: 36, musculo: 50.3,
+      grasaPliegues: 38.4, libraGrasa: 66, masaMagra: 105,
+      pliegues: { triceps:28, subesc:56, abdom:42, supra:37, muslo:37, pierna:25 }
+    },
+    {
+      date: '2026-05-02',
+      peso: 76.9, imc: 29.3, agua: 42.5, masaOsea: 2.7,
+      tmb: 1624, edadMet: 43, grasa: 33, musculo: 51.3,
+      grasaPliegues: 35.6, libraGrasa: 60, masaMagra: 109,
+      pliegues: { triceps:25, subesc:45, abdom:40, supra:37, muslo:35, pierna:25 }
+    },
+    {
+      date: '2026-06-08',
+      peso: 78.8, imc: 30, agua: 41.2, masaOsea: 2.7,
+      tmb: 1604, edadMet: 41, grasa: 32.8, musculo: 52,
+      grasaPliegues: 33.3, libraGrasa: 58, masaMagra: 115,
+      pliegues: { triceps:25, subesc:42, abdom:36, supra:32, muslo:33, pierna:24 }
+    }
+  ];
+  saveMetrics(data);
+  save('ft_metrics_preloaded', true);
+}
+
+// ── Alertas e Insights ──
+function renderMetricAlerts(metrics) {
+  const container = document.getElementById('metrics-alerts');
+  container.innerHTML = '';
+  if (metrics.length < 1) return;
+  const last = metrics[metrics.length-1];
+  const prev = metrics.length > 1 ? metrics[metrics.length-2] : null;
+  const alerts = [];
+
+  // IMC > 30 = obesidad
+  if (last.imc >= 30) {
+    alerts.push({ type:'warn', icon:'⚠️', title:'IMC en zona de obesidad', msg:`Tu IMC actual es ${last.imc}. La meta es llegar por debajo de 30. Estás a ${(last.imc-29.9).toFixed(1)} puntos del límite de sobrepeso.` });
+  } else if (last.imc >= 25) {
+    alerts.push({ type:'info', icon:'📌', title:'IMC en sobrepeso', msg:`Tu IMC es ${last.imc}. Rango normal es 18.5–24.9. Vas en buena dirección.` });
+  }
+
+  // % grasa objetivo
+  if (last.grasa > 35) {
+    alerts.push({ type:'warn', icon:'🔴', title:'% Grasa por encima del rango saludable', msg:`Con ${last.grasa}% de grasa, estás por encima del 32% recomendado para mujeres activas. Tu meta con Damaris es 30%.` });
+  } else if (last.grasa <= 30) {
+    alerts.push({ type:'ok', icon:'🎯', title:'¡Alcanzaste la meta de % grasa!', msg:`Con ${last.grasa}% ya llegaste a la meta de 30% establecida con tu nutricionista. Hora de poner una nueva meta.` });
+  }
+
+  // Peso subió entre fichas
+  if (prev && last.peso > prev.peso) {
+    const diff = (last.peso - prev.peso).toFixed(1);
+    // Solo alerta si también subió la grasa
+    if (last.grasa >= prev.grasa) {
+      alerts.push({ type:'warn', icon:'📈', title:'Peso y grasa subieron en la última ficha', msg:`Tu peso subió +${diff} kg y tu % grasa también subió entre las últimas dos fichas. Revisa adherencia al plan nutricional.` });
+    } else {
+      alerts.push({ type:'info', icon:'💡', title:`Peso subió +${diff} kg pero la grasa bajó`, msg:`Subida de peso con reducción de grasa = ganancia de músculo. ¡Eso es progreso real! Masa muscular: ${last.musculo} kg.` });
+    }
+  }
+
+  // Músculo ganado — positivo
+  const first = metrics[0];
+  const musGain = last.musculo - first.musculo;
+  if (musGain >= 1) {
+    alerts.push({ type:'ok', icon:'💪', title:`+${musGain.toFixed(1)} kg de músculo desde el inicio`, msg:`Ganaste ${musGain.toFixed(1)} kg de masa muscular manteniendo el entrenamiento. La masa muscular actual es ${last.musculo} kg.` });
+  }
+
+  // Edad metabólica vs edad real
+  if (last.edadMet && last.edadMet < 31) {
+    alerts.push({ type:'ok', icon:'⚡', title:'Edad metabólica mejor que la edad real', msg:`Tu edad metabólica (${last.edadMet} años) ya está por debajo de tu edad real (31 años). El entrenamiento está funcionando.` });
+  } else if (last.edadMet && last.edadMet > 35) {
+    alerts.push({ type:'warn', icon:'🕐', title:'Edad metabólica elevada', msg:`Tu edad metabólica (${last.edadMet} años) está ${last.edadMet - 31} años por encima de tu edad real. Con consistencia en entreno y nutrición esto mejora.` });
+  }
+
+  // Hidratación
+  if (last.agua < 40) {
+    alerts.push({ type:'warn', icon:'💧', title:'% de agua bajo', msg:`Tu hidratación corporal está en ${last.agua}%. Lo ideal para mujeres activas es 45–60%. Aumenta consumo de agua.` });
+  }
+
+  // Sin fichas recientes
+  const daysSinceLast = Math.floor((Date.now() - new Date(last.date)) / (1000*60*60*24));
+  if (daysSinceLast > 45) {
+    alerts.push({ type:'info', icon:'📅', title:'Hace más de 45 días de la última ficha', msg:`Tu última evaluación fue hace ${daysSinceLast} días. Se recomienda hacer seguimiento cada 4–6 semanas con tu nutricionista.` });
+  }
+
+  if (!alerts.length) {
+    container.innerHTML = `<div style="background:var(--green-bg);border:1px solid rgba(34,197,94,0.25);border-radius:var(--r);padding:14px 18px;display:flex;gap:10px;align-items:center;">
+      <span style="font-size:20px;">✅</span>
+      <div><div style="font-size:13px;font-weight:700;color:var(--green);">Todo en orden</div>
+      <div style="font-size:12px;color:var(--text2);">No hay alertas activas en tus métricas actuales.</div></div></div>`;
+    return;
+  }
+
+  const colors = {
+    ok:   { bg:'var(--green-bg)',  border:'rgba(34,197,94,0.25)',  title:'var(--green)' },
+    warn: { bg:'var(--amber-bg)', border:'rgba(245,158,11,0.25)', title:'var(--amber)' },
+    info: { bg:'var(--blue-bg)',   border:'rgba(59,130,246,0.25)', title:'var(--blue)'  },
+  };
+  alerts.forEach(a => {
+    const c = colors[a.type];
+    const div = document.createElement('div');
+    div.style.cssText = `background:${c.bg};border:1px solid ${c.border};border-radius:var(--r);padding:14px 18px;display:flex;gap:12px;align-items:flex-start;`;
+    div.innerHTML = `<span style="font-size:20px;flex-shrink:0;">${a.icon}</span>
+      <div><div style="font-size:13px;font-weight:700;color:${c.title};margin-bottom:3px;">${a.title}</div>
+      <div style="font-size:12px;color:var(--text2);">${a.msg}</div></div>`;
+    container.appendChild(div);
+  });
+}
+
+function renderMetricInsights(metrics) {
+  const container = document.getElementById('metrics-insights');
+  if (metrics.length < 2) {
+    container.innerHTML = `<div class="empty-state" style="margin:0;"><h3>Necesitas al menos 2 fichas</h3><p>Los insights aparecen cuando hay datos de evolución para comparar.</p></div>`;
+    return;
+  }
+
+  const first = metrics[0];
+  const last  = metrics[metrics.length-1];
+  const prev  = metrics[metrics.length-2];
+  const totalDays = Math.round((new Date(last.date)-new Date(first.date))/(1000*60*60*24));
+  const weeks = (totalDays/7).toFixed(1);
+
+  const insights = [];
+
+  // Recomposición corporal
+  const grasaDelta  = last.grasa   - first.grasa;
+  const musculoDelta= last.musculo - first.musculo;
+  if (grasaDelta < 0 && musculoDelta > 0) {
+    insights.push({ icon:'🔥', title:'Recomposición corporal en progreso', body:`En ${weeks} semanas bajaste ${Math.abs(grasaDelta).toFixed(1)} puntos de grasa y ganaste ${musculoDelta.toFixed(1)} kg de músculo simultáneamente. Esto es lo más difícil de lograr y lo estás haciendo.` });
+  }
+
+  // Ritmo de pérdida de grasa
+  const grasaLbPerdidas = first.libraGrasa - last.libraGrasa;
+  if (grasaLbPerdidas > 0 && totalDays > 0) {
+    const lbPorSemana = (grasaLbPerdidas / (totalDays/7)).toFixed(2);
+    const ritmo = parseFloat(lbPorSemana) >= 0.5 ? 'óptimo' : parseFloat(lbPorSemana) >= 0.3 ? 'conservador pero sostenible' : 'lento';
+    insights.push({ icon:'📉', title:`Perdiendo grasa a ritmo ${ritmo}`, body:`Has perdido ${grasaLbPerdidas} lb de grasa en ${weeks} semanas (≈${lbPorSemana} lb/semana). Un ritmo sano es 0.5–1 lb por semana para conservar músculo.` });
+  }
+
+  // Pliegues — cuál bajó más
+  if (first.pliegues && last.pliegues) {
+    const pliegueLabels = { triceps:'tríceps', subesc:'subescapular', abdom:'abdominal', supra:'supraespinal', muslo:'muslo', pierna:'pierna' };
+    let maxKey='', maxDrop=0;
+    Object.keys(pliegueLabels).forEach(k => {
+      const drop = (first.pliegues[k]||0) - (last.pliegues[k]||0);
+      if (drop > maxDrop) { maxDrop=drop; maxKey=k; }
+    });
+    if (maxKey && maxDrop > 0) {
+      insights.push({ icon:'📐', title:`Mayor reducción: pliegue ${pliegueLabels[maxKey]}`, body:`El pliegue ${pliegueLabels[maxKey]} bajó ${maxDrop} mm (de ${first.pliegues[maxKey]} a ${last.pliegues[maxKey]} mm), la reducción más notable. El subescapular (zona dorsal/espalda) es especialmente relevante para salud metabólica.` });
+    }
+
+    // Pliegue subescapular específico
+    const subescDrop = (first.pliegues.subesc||0) - (last.pliegues.subesc||0);
+    if (subescDrop >= 10) {
+      insights.push({ icon:'✅', title:'Grasa visceral/troncal reduciendo significativamente', body:`El pliegue subescapular bajó ${subescDrop} mm. Este pliegue refleja acumulación de grasa en tronco, asociada a riesgo metabólico. Reducirlo es una de las mejoras más importantes para tu salud.` });
+    }
+  }
+
+  // TMB — si subió, es muy buena señal
+  const tmbDelta = last.tmb - first.tmb;
+  if (tmbDelta > 0) {
+    insights.push({ icon:'⚡', title:'Tu metabolismo basal mejoró', body:`Tu TMB subió ${tmbDelta} kcal/día. Esto significa que tu cuerpo quema más calorías en reposo — resultado directo de ganar masa muscular. Cada kg de músculo quema ~13 kcal extra por día.` });
+  }
+
+  // Edad metabólica trend
+  const edadDelta = last.edadMet - first.edadMet;
+  if (edadDelta < 0) {
+    insights.push({ icon:'🕐', title:`Edad metabólica bajó ${Math.abs(edadDelta)} años`, body:`Tu edad metabólica pasó de ${first.edadMet} a ${last.edadMet} años. Cada año que baja refleja mejoras reales en composición corporal y función metabólica.` });
+  }
+
+  // Proyección hacia la meta
+  const grasaFaltante = last.grasa - 30;
+  if (grasaFaltante > 0 && grasaDelta < 0 && totalDays > 0) {
+    const ritmoMensual = Math.abs(grasaDelta) / (totalDays/30);
+    const mesesParaMeta = (grasaFaltante / ritmoMensual).toFixed(1);
+    insights.push({ icon:'🎯', title:`Proyección: meta de 30% en ~${mesesParaMeta} meses`, body:`Basado en tu ritmo actual de pérdida de grasa (${ritmoMensual.toFixed(2)} puntos/mes), alcanzarías el 30% de grasa en aproximadamente ${mesesParaMeta} meses si mantienes la consistencia.` });
+  }
+
+  container.innerHTML = insights.map(ins => `
+    <div style="display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:22px;flex-shrink:0;margin-top:1px;">${ins.icon}</span>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">${ins.title}</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6;">${ins.body}</div>
+      </div>
+    </div>`).join('') || `<div class="empty-state" style="margin:0;"><h3>Sin insights disponibles</h3><p>Agrega más fichas para ver análisis de tendencias.</p></div>`;
+}
+
+function renderMetricasTab() {
+  const metrics = getMetrics().sort((a,b) => new Date(a.date)-new Date(b.date));
+  renderMetricSnapshot(metrics);
+  renderMetricAlerts(metrics);
+  renderMetricInsights(metrics);
+  renderMetaCard(metrics);
+  renderMetricChart('mc-peso',    metrics, 'peso',    'Peso (kg)',          '#6c63ff', 70, 85);
+  renderMetricChart('mc-grasa',   metrics, 'grasa',   '% Grasa',            '#ef4444', 25, 42);
+  renderMetricChart('mc-musculo', metrics, 'musculo', 'Masa muscular (kg)', '#22c55e', 45, 58);
+  renderMetricChart('mc-imc',     metrics, 'imc',     'IMC',               '#f59e0b', 25, 35);
+  renderMetricChart('mc-edadmet', metrics, 'edadMet', 'Edad metabólica',   '#3b82f6', 35, 50);
+  renderMetricChart('mc-tmb',     metrics, 'tmb',     'TMB (kcal)',         '#8b84ff', 1550, 1700);
+  renderPlieguesChart(metrics);
+  renderMetricsTable(metrics);
+}
+
+function renderMetricSnapshot(metrics) {
+  if (!metrics.length) return;
+  const last = metrics[metrics.length-1];
+  const prev = metrics.length > 1 ? metrics[metrics.length-2] : null;
+  const diff = (key, unit='', invert=false) => {
+    if (!prev) return '';
+    const d = (last[key] - prev[key]);
+    const pos = invert ? d < 0 : d > 0;
+    const col = pos ? '#22c55e' : d < 0 ? (invert ? '#22c55e' : '#ef4444') : 'var(--text3)';
+    const sign = d > 0 ? '+' : '';
+    return d !== 0 ? `<span style="font-size:11px;color:${col};display:block;">${sign}${d.toFixed(1)}${unit}</span>` : '';
+  };
+  const cards = [
+    { label:'Peso', val: last.peso+'kg', diff: diff('peso','kg') },
+    { label:'% Grasa', val: last.grasa+'%', diff: diff('grasa','%',true) },
+    { label:'Masa muscular', val: last.musculo+'kg', diff: diff('musculo','kg') },
+    { label:'IMC', val: last.imc, diff: diff('imc','',true) },
+    { label:'Masa magra', val: last.masaMagra+'lb', diff: diff('masaMagra','lb') },
+    { label:'Edad metab.', val: last.edadMet+' años', diff: diff('edadMet',' años',true) },
+    { label:'TMB', val: last.tmb+' kcal', diff: '' },
+    { label:'% Agua', val: last.agua+'%', diff: diff('agua','%') },
+  ];
+  document.getElementById('metrics-snapshot').innerHTML = cards.map(c => `
+    <div class="stat-card" style="margin-bottom:0;">
+      <span class="stat-label">${c.label}</span>
+      <span style="font-size:20px;font-weight:700;color:var(--text);">${c.val}</span>
+      ${c.diff || '<span style="font-size:11px;color:var(--text3);">—</span>'}
+    </div>`).join('');
+}
+
+function renderMetaCard(metrics) {
+  if (!metrics.length) return;
+  const last = metrics[metrics.length-1];
+  const first = metrics[0];
+  // Meta: 30% grasa, -15 lb de grasa
+  const metaGrasa = 30;
+  const metaGrasaLb = first.libraGrasa - 15;
+  const grasaPct = Math.min(100, Math.round(((first.grasa - last.grasa) / (first.grasa - metaGrasa)) * 100));
+  const grasaLbPct = Math.min(100, Math.round(((first.libraGrasa - last.libraGrasa) / 15) * 100));
+  const musculoGain = (last.musculo - first.musculo).toFixed(1);
+
+  document.getElementById('meta-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:6px;">
+          <span>% Grasa → meta 30%</span>
+          <span style="color:var(--accent2);">${last.grasa}% / ${metaGrasa}%</span>
+        </div>
+        <div style="background:var(--surface3);border-radius:99px;height:8px;overflow:hidden;">
+          <div style="width:${grasaPct}%;height:100%;background:linear-gradient(90deg,#6c63ff,#22c55e);border-radius:99px;"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px;">${grasaPct}% del camino — faltan ${(last.grasa-metaGrasa).toFixed(1)} puntos de grasa</div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:6px;">
+          <span>Libras de grasa → -15 lb</span>
+          <span style="color:var(--green);">${first.libraGrasa-last.libraGrasa} lb perdidas</span>
+        </div>
+        <div style="background:var(--surface3);border-radius:99px;height:8px;overflow:hidden;">
+          <div style="width:${grasaLbPct}%;height:100%;background:linear-gradient(90deg,#22c55e,#3b82f6);border-radius:99px;"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px;">${grasaLbPct}% completado — ${15-(first.libraGrasa-last.libraGrasa)} lb restantes</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:13px;color:var(--text2);padding-top:12px;border-top:1px solid var(--border);">
+      <span>💪 Músculo ganado: <strong style="color:var(--green);">+${musculoGain} kg</strong> desde inicio</span>
+      <span>📅 ${metrics.length} fichas registradas</span>
+      <span>🗓️ Última ficha: ${formatDate(last.date)}</span>
+    </div>`;
+}
+
+function renderMetricChart(canvasId, metrics, key, label, color, yMin, yMax) {
+  if (METRIC_CHARTS[canvasId]) { METRIC_CHARTS[canvasId].destroy(); delete METRIC_CHARTS[canvasId]; }
+  if (!metrics.length) return;
+  const labels = metrics.map(m => { const d=new Date(m.date); return d.toLocaleDateString('es-ES',{day:'numeric',month:'short'}); });
+  const data = metrics.map(m => m[key]);
+  METRIC_CHARTS[canvasId] = new Chart(document.getElementById(canvasId), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label, data,
+        borderColor: color,
+        backgroundColor: color.replace(')',',0.1)').replace('rgb','rgba').replace('#',''),
+        fill: true, tension: 0.3,
+        pointBackgroundColor: color,
+        pointBorderColor: '#181c25',
+        pointBorderWidth: 2,
+        pointRadius: 5, pointHoverRadius: 7,
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{
+        x:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#8b93a8',font:{size:10}} },
+        y:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#8b93a8',font:{size:10}}, min:yMin, max:yMax }
+      }
+    }
+  });
+}
+
+function renderPlieguesChart(metrics) {
+  if (METRIC_CHARTS['mc-pliegues']) { METRIC_CHARTS['mc-pliegues'].destroy(); delete METRIC_CHARTS['mc-pliegues']; }
+  if (!metrics.length) return;
+  const labels = metrics.map(m => { const d=new Date(m.date); return d.toLocaleDateString('es-ES',{day:'numeric',month:'short'}); });
+  const pliegueKeys = [
+    { key:'triceps',    label:'Tríceps',       color:'#6c63ff' },
+    { key:'subesc',     label:'Subescapular',  color:'#ef4444' },
+    { key:'abdom',      label:'Abdominal',     color:'#f59e0b' },
+    { key:'supra',      label:'Supraespinal',  color:'#22c55e' },
+    { key:'muslo',      label:'Muslo',         color:'#3b82f6' },
+    { key:'pierna',     label:'Pierna',        color:'#f472b6' },
+  ];
+  const datasets = pliegueKeys.map(p => ({
+    label: p.label,
+    data: metrics.map(m => m.pliegues?.[p.key] ?? null),
+    borderColor: p.color,
+    backgroundColor: 'transparent',
+    tension: 0.3,
+    pointRadius: 5, pointHoverRadius: 7,
+    pointBackgroundColor: p.color,
+    pointBorderColor: '#181c25',
+    pointBorderWidth: 2,
+  }));
+  METRIC_CHARTS['mc-pliegues'] = new Chart(document.getElementById('mc-pliegues'), {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{ display:true, position:'bottom', labels:{color:'#8b93a8',font:{size:11},padding:12,boxWidth:10} }
+      },
+      scales:{
+        x:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#8b93a8',font:{size:11}} },
+        y:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#8b93a8',font:{size:11}}, min:0 }
+      }
+    }
+  });
+}
+
+function renderMetricsTable(metrics) {
+  if (!metrics.length) { document.getElementById('metrics-table').innerHTML='<div class="empty-state" style="margin:0;"><h3>Sin fichas</h3></div>'; return; }
+  const sorted = [...metrics].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const rows = sorted.map((m,i) => {
+    const prev = sorted[i+1];
+    const chg = (key, invert=false) => {
+      if (!prev || prev[key]==null || m[key]==null) return '<span style="color:var(--text3)">—</span>';
+      const d = m[key]-prev[key];
+      if (d===0) return `<span style="color:var(--text3)">${m[key]}</span>`;
+      const good = invert ? d<0 : d>0;
+      const col = good ? '#22c55e' : '#ef4444';
+      return `<span style="color:${col}">${m[key]} <small>(${d>0?'+':''}${d.toFixed(1)})</small></span>`;
+    };
+    return `<tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:10px 8px;font-size:12px;color:var(--text2);white-space:nowrap;">${formatDate(m.date)}</td>
+      <td style="padding:10px 8px;font-size:13px;text-align:center;">${chg('peso')}</td>
+      <td style="padding:10px 8px;font-size:13px;text-align:center;">${chg('grasa',true)}</td>
+      <td style="padding:10px 8px;font-size:13px;text-align:center;">${chg('musculo')}</td>
+      <td style="padding:10px 8px;font-size:13px;text-align:center;">${chg('imc',true)}</td>
+      <td style="padding:10px 8px;font-size:13px;text-align:center;">${chg('edadMet',true)}</td>
+      <td style="padding:10px 8px;font-size:13px;text-align:center;"><button class="btn btn-danger btn-sm btn-icon" onclick="deleteMetric('${m.date}')" title="Eliminar">✕</button></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('metrics-table').innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead><tr style="border-bottom:1px solid var(--border2);">
+        <th style="padding:8px;text-align:left;font-size:11px;color:var(--text3);font-weight:600;">Fecha</th>
+        <th style="padding:8px;text-align:center;font-size:11px;color:var(--text3);font-weight:600;">Peso</th>
+        <th style="padding:8px;text-align:center;font-size:11px;color:var(--text3);font-weight:600;">% Grasa</th>
+        <th style="padding:8px;text-align:center;font-size:11px;color:var(--text3);font-weight:600;">Músculo</th>
+        <th style="padding:8px;text-align:center;font-size:11px;color:var(--text3);font-weight:600;">IMC</th>
+        <th style="padding:8px;text-align:center;font-size:11px;color:var(--text3);font-weight:600;">Edad met.</th>
+        <th style="padding:8px;"></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function deleteMetric(date) {
+  const m = getMetrics().filter(x => x.date !== date);
+  saveMetrics(m);
+  showToast('Ficha eliminada');
+  renderMetricasTab();
+}
+
+function openMetricModal() {
+  document.getElementById('m-date').value = todayKey();
+  ['peso','grasa','musculo','imc','agua','tmb','edadmet','grasapliegues','magra',
+   'p-triceps','p-subesc','p-abdom','p-supra','p-muslo','p-pierna'].forEach(id => {
+    const el = document.getElementById('m-'+id);
+    if (el) el.value = '';
+  });
+  document.getElementById('metric-modal').classList.add('open');
+}
+
+function closeMetricModal() { document.getElementById('metric-modal').classList.remove('open'); }
+
+function saveMetric() {
+  const g = id => { const el=document.getElementById('m-'+id); return el&&el.value?parseFloat(el.value):null; };
+  const date = document.getElementById('m-date').value;
+  if (!date) { showToast('Selecciona una fecha', 'err'); return; }
+  if (!g('peso')) { showToast('El peso es obligatorio', 'err'); return; }
+  const entry = {
+    date, peso:g('peso'), imc:g('imc'), agua:g('agua'), masaOsea:2.7,
+    tmb:g('tmb'), edadMet:g('edadmet'), grasa:g('grasa'), musculo:g('musculo'),
+    grasaPliegues:g('grasapliegues'), libraGrasa:null, masaMagra:g('magra'),
+    pliegues:{
+      triceps:g('p-triceps'), subesc:g('p-subesc'), abdom:g('p-abdom'),
+      supra:g('p-supra'), muslo:g('p-muslo'), pierna:g('p-pierna')
+    }
+  };
+  const metrics = getMetrics().filter(m => m.date !== date);
+  metrics.push(entry);
+  saveMetrics(metrics);
+  closeMetricModal();
+  showToast('Ficha guardada ✅');
+  renderMetricasTab();
+}
+
+// ══════════════════════════════════════════
+// PLAN NUTRICIONAL — DATOS
+// ══════════════════════════════════════════
+const MEAL_TIMES = ['Desayuno','Merienda 1','Almuerzo','Merienda 3','Cena'];
+
+const MEAL_PLAN = {
+  Lunes: {
+    Desayuno: {
+      intercambio: '3 Proteína · 2 CHO · 1 Vegetal · 1 Fruta',
+      items: ['1 huevo + 6 oz leche descremada + esencia de vainilla + stevia → tostada francesa','2 rebanadas de pan integral (freír con spray)','Maple sin azúcar','1 fruta','Aparte: 2 mozzarella string','8 oz de café o té']
+    },
+    'Merienda 1': {
+      intercambio: '1 Fruta · 1 CHO',
+      items: ['Opción 1: 1 fruta + 1 barrita o galleta','Opción 2: 1 yogurt light + 1/4 tz de granola','Opción 3: 1/3 tz de semillas + 1 fruta']
+    },
+    Almuerzo: {
+      intercambio: '5 Proteínas · 1 CHO · 2 Vegetales',
+      items: ['5 oz de carne molida magra picada con zanahoria','1 tz de chirmol','1/2 elote cocido','Agua']
+    },
+    'Merienda 3': {
+      intercambio: '1 Fruta · 1 Vegetal',
+      items: ['Opción 1: 1 tz de zanahorias babies + 1/4 tz de hummus','Opción 2: 1 fruta + gelatina sin azúcar','Opción 3: 1 fruta + 1 tz de pepino con tajín']
+    },
+    Cena: {
+      intercambio: '3 Proteínas · 1 CHO · 1 Vegetal',
+      items: ['8 oz yogurt tarro Dos Pinos 20g proteína','1 tz de cereal','1 fruta']
+    }
+  },
+  Martes: {
+    Desayuno: {
+      intercambio: '3 Proteína · 2 CHO · 1 Vegetal · 1 Fruta',
+      items: ['1 yogurt de 25g de proteína','1 fruta','1/2 tz de granola','8 oz de café o té']
+    },
+    'Merienda 1': {
+      intercambio: '1 Fruta · 1 CHO',
+      items: ['Opción 1: 1 fruta + 1 barrita o galleta','Opción 2: 1 yogurt light + 1/4 tz de granola','Opción 3: 1/3 tz de semillas + 1 fruta']
+    },
+    Almuerzo: {
+      intercambio: '5 Proteínas · 1 CHO · 2 Vegetales',
+      items: ['5 oz de pollo en fajitas','Brócoli, zanahoria, apio y ajonjolí','2 cdtas de salsa de soya','1 tz de espinaca y tomate cherry','1 salma','Agua']
+    },
+    'Merienda 3': {
+      intercambio: '1 Fruta · 1 Vegetal',
+      items: ['Opción 1: 1 tz de zanahorias babies + 1/4 tz de hummus','Opción 2: 1 fruta + gelatina sin azúcar','Opción 3: 1 fruta + 1 tz de pepino con tajín']
+    },
+    Cena: {
+      intercambio: '3 Proteínas · 1 CHO · 1 Vegetal',
+      items: ['1/4 tz de frijoles cocidos','2 claras de huevo revueltas (spray)','4 cdas de requesón','1 tortilla de taco']
+    }
+  },
+  Miércoles: {
+    Desayuno: {
+      intercambio: '3 Proteína · 2 CHO · 1 Vegetal · 1 Fruta',
+      items: ['2 tostadas integrales','3 cdas de cottage o requesón cada una','1/4 de aguacate','8 oz de café o té','1 fruta']
+    },
+    'Merienda 1': {
+      intercambio: '1 Fruta · 1 CHO',
+      items: ['Opción 1: 1 fruta + 1 barrita o galleta','Opción 2: 1 yogurt light + 1/4 tz de granola','Opción 3: 1/3 tz de semillas + 1 fruta']
+    },
+    Almuerzo: {
+      intercambio: '5 Proteínas · 1 CHO · 2 Vegetales',
+      items: ['4 oz de posta de cerdo en trozos','Salsa de tomate con especias','1/2 tz de papa cocida','1 tz de zanahoria al vapor','Agua']
+    },
+    'Merienda 3': {
+      intercambio: '1 Fruta · 1 Vegetal',
+      items: ['Opción 1: 1 tz de zanahorias babies + 1/4 tz de hummus','Opción 2: 1 fruta + gelatina sin azúcar','Opción 3: 1 fruta + 1 tz de pepino con tajín']
+    },
+    Cena: {
+      intercambio: '3 Proteínas · 1 CHO · 1 Vegetal',
+      items: ['1/3 plátano hervido','2 salchichas de pavo en tomatada natural','2 cdas de requesón o cottage']
+    }
+  },
+  Jueves: {
+    Desayuno: {
+      intercambio: '3 Proteína · 2 CHO · 1 Vegetal · 1 Fruta',
+      items: ['8 oz yogurt tarro Dos Pinos 20g proteína','1 fruta','1 tz de cereal','Aparte: 1 mozzarella string','8 oz de café o té']
+    },
+    'Merienda 1': {
+      intercambio: '1 Fruta · 1 CHO',
+      items: ['Opción 1: 1 fruta + 1 barrita o galleta','Opción 2: 1 yogurt light + 1/4 tz de granola','Opción 3: 1/3 tz de semillas + 1 fruta']
+    },
+    Almuerzo: {
+      intercambio: '5 Proteínas · 1 CHO · 2 Vegetales',
+      items: ['5 oz de pechuga de pollo asada','1/2 tz de papas baby salteadas con mantequilla de ajo','1 tortilla','Agua']
+    },
+    'Merienda 3': {
+      intercambio: '1 Fruta · 1 Vegetal',
+      items: ['Opción 1: 1 tz de zanahorias babies + 1/4 tz de hummus','Opción 2: 1 fruta + gelatina sin azúcar','Opción 3: 1 fruta + 1 tz de pepino con tajín']
+    },
+    Cena: {
+      intercambio: '3 Proteínas · 1 CHO · 1 Vegetal',
+      items: ['2 rapiditas Bimbo mediterránea','2 cdas de frijoles molidos sin grasa','2 lascas de queso mozzarella derretido','Tomate en trozos al gusto']
+    }
+  },
+  Viernes: {
+    Desayuno: {
+      intercambio: '3 Proteína · 2 CHO · 1 Vegetal · 1 Fruta',
+      items: ['3 rollitos de jamón de pavo con tomatada','1/3 plátano cocido','1 tostada','8 oz de café o té','1 fruta']
+    },
+    'Merienda 1': {
+      intercambio: '1 Fruta · 1 CHO',
+      items: ['Opción 1: 1 fruta + 1 barrita o galleta','Opción 2: 1 yogurt light + 1/4 tz de granola','Opción 3: 1/3 tz de semillas + 1 fruta']
+    },
+    Almuerzo: {
+      intercambio: '5 Proteínas · 1 CHO · 2 Vegetales',
+      items: ['5 oz de salón picado con rábano y hierba buena','1/3 tz de arroz al vapor','1 tz de pepino','Agua']
+    },
+    'Merienda 3': {
+      intercambio: '1 Fruta · 1 Vegetal',
+      items: ['Opción 1: 1 tz de zanahorias babies + 1/4 tz de hummus','Opción 2: 1 fruta + gelatina sin azúcar','Opción 3: 1 fruta + 1 tz de pepino con tajín']
+    },
+    Cena: {
+      intercambio: '3 Proteínas · 1 CHO · 1 Vegetal',
+      items: ['2 rapiditas Bimbo mediterránea','1.5 oz de mozzarella por rapidita','Hongos al gusto (pueden ser en lata)']
+    }
+  },
+  Sábado: {
+    Desayuno: {
+      intercambio: '3 Proteína · 2 CHO · 1 Vegetal · 1 Fruta',
+      items: ['1/3 plátano hervido','2 salchichas de pavo en tomatada natural','2 cdas de cottage o requesón','8 oz de café o té','1 fruta']
+    },
+    'Merienda 1': {
+      intercambio: '1 Fruta · 1 CHO',
+      items: ['Opción 1: 1 fruta + 1 barrita o galleta','Opción 2: 1 yogurt light + 1/4 tz de granola','Opción 3: 1/3 tz de semillas + 1 fruta']
+    },
+    Almuerzo: {
+      intercambio: '5 Proteínas · 1 CHO · 2 Vegetales',
+      items: ['2 tz de caldo de pollo con tomate, cebolla, ajo tatemado (licuar y hervir)','3 oz de pollo deshilado','1 oz de mozzarella','1/4 de aguacate','1 paquete de salmas o 2 tortillas de taco fritas en airfryer','Agua']
+    },
+    'Merienda 3': {
+      intercambio: '1 Fruta · 1 Vegetal',
+      items: ['Opción 1: 1 tz de zanahorias babies + 1/4 tz de hummus','Opción 2: 1 fruta + gelatina sin azúcar','Opción 3: 1 fruta + 1 tz de pepino con tajín']
+    },
+    Cena: {
+      intercambio: '⭐ OPCIÓN LIBRE',
+      libre: true,
+      items: ['Cena libre — disfruta sin culpa 🎉','Sigue hidratada']
+    }
+  },
+  Domingo: {
+    Desayuno: {
+      intercambio: '3 Proteína · 2 CHO · 1 Vegetal · 1 Fruta',
+      items: ['1 pan bagel mediano','2 oz de jamón de pavo','1 oz de mozzarella','Espinaca al gusto','8 oz de café o té']
+    },
+    'Merienda 1': {
+      intercambio: '1 Fruta · 1 CHO',
+      items: ['Opción 1: 1 fruta + 1 barrita o galleta','Opción 2: 1 yogurt light + 1/4 tz de granola','Opción 3: 1/3 tz de semillas + 1 fruta']
+    },
+    Almuerzo: {
+      intercambio: '5 Proteínas · 1 CHO · 2 Vegetales',
+      items: ['3 oz de carne molida de pollo o pavo (tortita con spray)','1 oz de queso mozzarella','Lechuga, tomate y pepino','1 pan para hamburguesa','1 tz de palitos de apio','Agua']
+    },
+    'Merienda 3': {
+      intercambio: '1 Fruta · 1 Vegetal',
+      items: ['Opción 1: 1 tz de zanahorias babies + 1/4 tz de hummus','Opción 2: 1 fruta + gelatina sin azúcar','Opción 3: 1 fruta + 1 tz de pepino con tajín']
+    },
+    Cena: {
+      intercambio: '🌽 Antojito típico',
+      items: ['2 pupusas de queso / ayote / loroco de maíz','Curtido','Salsa al gusto','Bebida light']
+    }
+  }
+};
+
+// ── Storage helpers ──
+function getNutrLogs() { return load('ft_nutr_logs', {}); }
+function saveNutrLogs(d) { save('ft_nutr_logs', d); }
+
+let nutrCurrentDay = null;
+let nutrLogTarget = null; // { day, mealTime }
+let nutrSelectedFeeling = null;
+
+// ── Tab render ──
+function renderNutricionTab() {
+  nutrCurrentDay = nutrCurrentDay || todayDayName();
+  renderNutrDaySelector();
+  renderNutrMeals();
+  renderNutrStats();
+  renderNutrHistory();
+  renderNutrInsights();
+}
+
+function renderNutrDaySelector() {
+  const sel = document.getElementById('nutr-day-selector');
+  sel.innerHTML = '';
+  const logs = getNutrLogs();
+  DAYS.forEach(day => {
+    const btn = document.createElement('button');
+    const dayLog = logs[day] || {};
+    const done = MEAL_TIMES.filter(m => dayLog[m]?.done).length;
+    btn.className = 'day-btn' + (day === nutrCurrentDay ? ' active' : '') + (done > 0 ? ' has-exercises' : '');
+    btn.innerHTML = day + (done > 0 ? ` <span style="font-size:10px;color:var(--green)">${done}/5</span>` : '');
+    btn.onclick = () => { nutrCurrentDay = day; renderNutricionTab(); };
+    sel.appendChild(btn);
+  });
+}
+
+function renderNutrMeals() {
+  const logs = getNutrLogs();
+  const dayPlan = MEAL_PLAN[nutrCurrentDay] || {};
+  const dayLog  = logs[nutrCurrentDay] || {};
+  const list = document.getElementById('nutr-meals-list');
+  list.innerHTML = '';
+
+  // Update day title
+  document.getElementById('nutr-day-name').textContent = nutrCurrentDay;
+  document.getElementById('nutr-day-title').textContent =
+    nutrCurrentDay === todayDayName() ? 'Nutrición de hoy' : `Nutrición — ${nutrCurrentDay}`;
+
+  const mealIcons = { Desayuno:'🌅', 'Merienda 1':'🍎', Almuerzo:'🍽️', 'Merienda 3':'🥕', Cena:'🌙' };
+  const feelLabels = { saciada:'😊 Saciada', normal:'😐 Normal', hambre:'😩 Con hambre', mal:'🤢 No me cayó bien' };
+  const feelColors = { saciada:'var(--green)', normal:'var(--blue)', hambre:'var(--amber)', mal:'var(--red)' };
+
+  MEAL_TIMES.forEach(mt => {
+    const meal = dayPlan[mt];
+    if (!meal) return;
+    const log = dayLog[mt];
+    const done = log?.done;
+    const libre = meal.libre;
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.borderLeft = done ? '3px solid var(--green)' : libre ? '3px solid var(--amber)' : '3px solid var(--border2)';
+
+    const itemsHtml = meal.items.map(item => {
+      const isOpcion = item.startsWith('Opción');
+      return `<div style="display:flex;gap:8px;align-items:flex-start;padding:3px 0;">
+        <span style="color:${isOpcion?'var(--accent2)':'var(--green)'};flex-shrink:0;margin-top:2px;font-size:12px;">${isOpcion?'→':'·'}</span>
+        <span style="font-size:13px;color:${isOpcion?'var(--text2)':'var(--text)'};">${item}</span>
+      </div>`;
+    }).join('');
+
+    card.innerHTML = `
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:22px;">${mealIcons[mt]}</span>
+          <div>
+            <div style="font-size:15px;font-weight:700;">${mt}</div>
+            <div style="font-size:11px;color:${libre?'var(--amber)':'var(--accent2)'};font-weight:600;">${meal.intercambio}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          ${done ? `<span style="font-size:11px;font-weight:700;color:${feelColors[log.feeling]||'var(--green)'};">${feelLabels[log.feeling]||'✅'}</span>` : ''}
+          <button class="btn btn-sm ${done?'btn-ghost':'btn-primary'}" onclick="openNutrModal('${nutrCurrentDay}','${mt}')" style="${done?'background:var(--green-bg);color:var(--green);border-color:rgba(34,197,94,0.3);':''}">
+            ${done ? '✓ Listo' : '+ Marcar'}
+          </button>
+        </div>
+      </div>
+      <div style="padding-left:4px;">${itemsHtml}</div>
+      ${log?.note ? `<div style="margin-top:8px;font-size:12px;color:var(--text3);font-style:italic;">📝 ${log.note}</div>` : ''}
+    `;
+    list.appendChild(card);
+  });
+}
+
+function renderNutrStats() {
+  const logs = getNutrLogs();
+  const dayLog = logs[nutrCurrentDay] || {};
+  const done = MEAL_TIMES.filter(m => dayLog[m]?.done).length;
+  const pct = Math.round(done/MEAL_TIMES.length*100);
+  document.getElementById('nutr-completed-count').textContent = `${done}/${MEAL_TIMES.length}`;
+  document.getElementById('nutr-completed-pct').textContent = `${pct}% del plan`;
+
+  // Week adherence
+  const weekDays = DAYS.slice(0,5); // Mon-Fri
+  let totalMeals=0, doneMeals=0;
+  weekDays.forEach(d => {
+    const dl = logs[d]||{};
+    MEAL_TIMES.forEach(m => { totalMeals++; if(dl[m]?.done) doneMeals++; });
+  });
+  const weekPct = totalMeals ? Math.round(doneMeals/totalMeals*100) : 0;
+  document.getElementById('nutr-week-pct').textContent = weekPct+'%';
+
+  // Streak — consecutive days with at least 1 meal logged
+  const allDates = Object.keys(logs).sort().reverse();
+  let streak = 0;
+  for (const d of allDates) {
+    const dl = logs[d]||{};
+    if (MEAL_TIMES.some(m => dl[m]?.done)) streak++;
+    else break;
+  }
+  document.getElementById('nutr-streak').textContent = streak;
+}
+
+function renderNutrHistory() {
+  const logs = getNutrLogs();
+  const hist = document.getElementById('nutr-history');
+  const days = DAYS.filter(d => {
+    const dl = logs[d]||{};
+    return MEAL_TIMES.some(m => dl[m]?.done);
+  });
+
+  if (!days.length) {
+    hist.innerHTML = `<div class="empty-state" style="margin:0;"><h3>Sin registros todavía</h3><p>Marca tus comidas del día y aquí verás tu historial.</p></div>`;
+    return;
+  }
+
+  const feelColors = { saciada:'var(--green)', normal:'var(--blue)', hambre:'var(--amber)', mal:'var(--red)' };
+  hist.innerHTML = days.map(d => {
+    const dl = logs[d]||{};
+    const done = MEAL_TIMES.filter(m => dl[m]?.done).length;
+    const pct = Math.round(done/MEAL_TIMES.length*100);
+    const dots = MEAL_TIMES.map(m => {
+      const log = dl[m];
+      if (!log?.done) return `<span style="width:10px;height:10px;border-radius:50%;background:var(--surface3);border:1px solid var(--border2);display:inline-block;" title="${m}"></span>`;
+      const col = feelColors[log.feeling]||'var(--green)';
+      return `<span style="width:10px;height:10px;border-radius:50%;background:${col};display:inline-block;" title="${m}: ${log.feeling||'hecho'}"></span>`;
+    }).join('');
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="font-size:13px;font-weight:600;min-width:90px;">${d}</span>
+        <div style="display:flex;gap:4px;">${dots}</div>
+      </div>
+      <span style="font-size:12px;font-weight:700;color:${pct>=80?'var(--green)':pct>=60?'var(--amber)':'var(--red)'};">${pct}%</span>
+    </div>`;
+  }).join('');
+}
+
+function renderNutrInsights() {
+  const logs = getNutrLogs();
+  const card = document.getElementById('nutr-insights-card');
+  const list = document.getElementById('nutr-insights-list');
+
+  // Need at least 3 days of data
+  const activeDays = DAYS.filter(d => MEAL_TIMES.some(m => logs[d]?.[m]?.done));
+  if (activeDays.length < 3) { card.style.display='none'; return; }
+  card.style.display='block';
+
+  const insights = [];
+
+  // Which meal is skipped most
+  const skipCount = {};
+  MEAL_TIMES.forEach(m => {
+    let skips = 0;
+    activeDays.forEach(d => { if (!logs[d]?.[m]?.done) skips++; });
+    skipCount[m] = skips;
+  });
+  const mostSkipped = Object.entries(skipCount).sort((a,b)=>b[1]-a[1])[0];
+  if (mostSkipped[1] > 0) {
+    insights.push({ icon:'⏭️', title:`Omites más: ${mostSkipped[0]}`, body:`Has saltado ${mostSkipped[0]} en ${mostSkipped[1]} de ${activeDays.length} días registrados. Este tiempo es importante para mantener el metabolismo activo.` });
+  }
+
+  // Hunger pattern
+  let hungerCount = 0, totalLogged = 0;
+  activeDays.forEach(d => MEAL_TIMES.forEach(m => {
+    const log = logs[d]?.[m];
+    if (log?.done) { totalLogged++; if(log.feeling==='hambre') hungerCount++; }
+  }));
+  if (totalLogged > 0 && hungerCount/totalLogged > 0.2) {
+    insights.push({ icon:'😩', title:'Estás quedando con hambre frecuentemente', body:`${Math.round(hungerCount/totalLogged*100)}% de tus comidas registradas terminaron con hambre. Habla con Damaris sobre ajustar porciones o tiempos.` });
+  } else if (totalLogged > 0) {
+    const saciadaPct = Math.round(activeDays.reduce((acc,d)=>acc+MEAL_TIMES.filter(m=>logs[d]?.[m]?.feeling==='saciada').length,0)/totalLogged*100);
+    if (saciadaPct > 50) insights.push({ icon:'😊', title:`${saciadaPct}% de tus comidas te dejaron saciada`, body:'Tu plan está funcionando bien en términos de saciedad. Sigue así.' });
+  }
+
+  // Overall adherence
+  const totalPossible = activeDays.length * MEAL_TIMES.length;
+  const totalDone = activeDays.reduce((acc,d)=>acc+MEAL_TIMES.filter(m=>logs[d]?.[m]?.done).length,0);
+  const adherePct = Math.round(totalDone/totalPossible*100);
+  if (adherePct >= 80) {
+    insights.push({ icon:'🏆', title:`${adherePct}% de adherencia al plan`, body:'Excelente consistencia. La adherencia alta al plan nutricional es el factor más importante para alcanzar tu meta de composición corporal.' });
+  } else if (adherePct < 60) {
+    insights.push({ icon:'📋', title:`${adherePct}% de adherencia al plan`, body:'Hay oportunidad de mejorar la consistencia. Intenta preparar las comidas con anticipación para los días más ocupados.' });
+  }
+
+  list.innerHTML = insights.map(i => `
+    <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:20px;flex-shrink:0;">${i.icon}</span>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;">${i.title}</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6;">${i.body}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── Modal ──
+function openNutrModal(day, mealTime) {
+  nutrLogTarget = { day, mealTime };
+  nutrSelectedFeeling = null;
+  const meal = MEAL_PLAN[day]?.[mealTime];
+  document.getElementById('nutr-modal-title').textContent = mealTime;
+  document.getElementById('nutr-modal-meal-desc').innerHTML =
+    (meal?.items||[]).map(i=>`<div style="margin-bottom:3px;">· ${i}</div>`).join('');
+  document.getElementById('nutr-log-note').value = '';
+  document.querySelectorAll('.nutr-feel-btn').forEach(b => {
+    b.style.background='transparent'; b.style.color='var(--text2)'; b.style.borderColor='var(--border2)';
+  });
+  document.getElementById('nutr-log-modal').classList.add('open');
+}
+
+function closeNutrModal() { document.getElementById('nutr-log-modal').classList.remove('open'); }
+
+function selectNutrFeeling(feel) {
+  nutrSelectedFeeling = feel;
+  const colors = { saciada:'var(--green)', normal:'var(--blue)', hambre:'var(--amber)', mal:'var(--red)' };
+  const bgs = { saciada:'var(--green-bg)', normal:'var(--blue-bg)', hambre:'var(--amber-bg)', mal:'var(--red-bg)' };
+  document.querySelectorAll('.nutr-feel-btn').forEach(b => {
+    const f = b.getAttribute('data-feel');
+    if (f === feel) {
+      b.style.background=bgs[feel]; b.style.color=colors[feel]; b.style.borderColor=colors[feel];
+    } else {
+      b.style.background='transparent'; b.style.color='var(--text2)'; b.style.borderColor='var(--border2)';
+    }
+  });
+}
+
+function saveNutrLog() {
+  if (!nutrLogTarget) return;
+  if (!nutrSelectedFeeling) { showToast('Selecciona cómo te sentiste', 'err'); return; }
+  const { day, mealTime } = nutrLogTarget;
+  const note = document.getElementById('nutr-log-note').value.trim();
+  const logs = getNutrLogs();
+  if (!logs[day]) logs[day] = {};
+  logs[day][mealTime] = { done: true, feeling: nutrSelectedFeeling, note, savedAt: new Date().toISOString() };
+  saveNutrLogs(logs);
+  closeNutrModal();
+  showToast(`${mealTime} registrado ✅`);
+  renderNutricionTab();
+}
+
+
+// ══════════════════════════════════════════
+// PRE-LOAD ROUTINE (runs only once)
+// ══════════════════════════════════════════
+function preloadRoutine() {
+  if (load('ft_routine_preloaded', false)) return;
+  const routine = {
+    "Lunes": [
+      { name: "Sentadilla Búlgara énfasis glúteo", muscle: "Gluteos", sets: "4", reps: "15 NEG", weight: 9.07, rest: 90, notes: "Énfasis en glúteo, descenso negativo controlado", addedAt: new Date().toISOString() },
+      { name: "Hip Thrust dead stop", muscle: "Gluteos", sets: "4", reps: "15,15,12,10", weight: 25, rest: 60, notes: "Pausa de 1 segundo abajo (dead stop)", addedAt: new Date().toISOString() },
+      { name: "Abducciones en máquina (cluster)", muscle: "Gluteos", sets: "4", reps: "12", weight: 20.4, rest: 60, notes: "Técnica cluster", addedAt: new Date().toISOString() },
+      { name: "Patada de glúteo en polea baja", muscle: "Gluteos", sets: "4", reps: "20", weight: 6.8, rest: 60, notes: "", addedAt: new Date().toISOString() },
+      { name: "Peso Muerto Rumano RDL (cluster)", muscle: "Gluteos", sets: "3", reps: "12", weight: 11.3, rest: 75, notes: "Técnica cluster", addedAt: new Date().toISOString() }
+    ],
+    "Martes": [
+      { name: "Peck Fly invertido", muscle: "Hombros", sets: "3", reps: "15", weight: 6.8, rest: 60, notes: "Posterior de hombros", addedAt: new Date().toISOString() },
+      { name: "Press militar sentada", muscle: "Hombros", sets: "4", reps: "13,10,10,8", weight: 9.07, rest: 90, notes: "", addedAt: new Date().toISOString() },
+      { name: "Frontales martillo parada", muscle: "Hombros", sets: "4", reps: "12,10,10,8", weight: 4.5, rest: 60, notes: "Mancuernas en posición martillo", addedAt: new Date().toISOString() },
+      { name: "Elevaciones laterales", muscle: "Hombros", sets: "3", reps: "12", weight: 4.5, rest: 60, notes: "", addedAt: new Date().toISOString() },
+      { name: "Extensión de tríceps polea lazo", muscle: "Brazos", sets: "3", reps: "16,12,10", weight: 6.8, rest: 60, notes: "", addedAt: new Date().toISOString() },
+      { name: "Extensión de tríceps barra EZ", muscle: "Brazos", sets: "3", reps: "12,10,8", weight: null, rest: 60, notes: "", addedAt: new Date().toISOString() },
+      { name: "Abdominales en polea", muscle: "Core", sets: "6", reps: "12", weight: null, rest: 45, notes: "", addedAt: new Date().toISOString() }
+    ],
+    "Miércoles": [
+      { name: "Desplantes con mancuernas", muscle: "Piernas", sets: "3", reps: "12", weight: 6.8, rest: 75, notes: "Cuádriceps + glúteo", addedAt: new Date().toISOString() },
+      { name: "Extensión de cuádriceps (NEG)", muscle: "Piernas", sets: "4", reps: "15,12,12,10", weight: 4.5, rest: 75, notes: "10 lb por lado, descenso negativo", addedAt: new Date().toISOString() },
+      { name: "Aducciones máquina", muscle: "Piernas", sets: "3", reps: "20", weight: 20.4, rest: 60, notes: "", addedAt: new Date().toISOString() },
+      { name: "Prensa máquina (NEG)", muscle: "Piernas", sets: "3", reps: "20,15,12", weight: 9.07, rest: 90, notes: "20 lb por lado, descenso negativo", addedAt: new Date().toISOString() },
+      { name: "Hip Thrust", muscle: "Gluteos", sets: "3", reps: "15 NEG", weight: 25, rest: 75, notes: "Descenso negativo", addedAt: new Date().toISOString() },
+      { name: "Elevación de pantorrillas en prensa", muscle: "Piernas", sets: "6", reps: "20", weight: 9.07, rest: 45, notes: "20 lb en prensa", addedAt: new Date().toISOString() },
+      { name: "Hiperextensiones", muscle: "Core", sets: "3", reps: "15", weight: null, rest: 60, notes: "Sin peso", addedAt: new Date().toISOString() }
+    ],
+    "Jueves": [
+      { name: "Pull Over barra V", muscle: "Espalda", sets: "4", reps: "15", weight: 13.6, rest: 75, notes: "", addedAt: new Date().toISOString() },
+      { name: "Jalones de pecho barra prono", muscle: "Espalda", sets: "4", reps: "12,12,10,10", weight: 13.6, rest: 75, notes: "", addedAt: new Date().toISOString() },
+      { name: "Remo con barra libre", muscle: "Espalda", sets: "4", reps: "12,10,8,6", weight: 2.27, rest: 90, notes: "5 lb por lado", addedAt: new Date().toISOString() },
+      { name: "Jalones triángulo", muscle: "Espalda", sets: "3", reps: "12,12,10", weight: 11.3, rest: 60, notes: "", addedAt: new Date().toISOString() },
+      { name: "Remo polea baja triángulo", muscle: "Espalda", sets: "3", reps: "12", weight: 11.3, rest: 60, notes: "", addedAt: new Date().toISOString() },
+      { name: "Curl de bícep barra libre", muscle: "Brazos", sets: "3", reps: "12,10,8", weight: 4.5, rest: 60, notes: "10 lb por lado", addedAt: new Date().toISOString() },
+      { name: "Curl martillo mancuernas", muscle: "Brazos", sets: "3", reps: "15,12,10", weight: 4.5, rest: 60, notes: "10 lb por lado", addedAt: new Date().toISOString() }
+    ],
+    "Viernes": [
+      { name: "Femorales máquina acostada (NEG)", muscle: "Piernas", sets: "4", reps: "20,15,12,10", weight: null, rest: 75, notes: "Descenso negativo", addedAt: new Date().toISOString() },
+      { name: "Peso Muerto Rumano RDL", muscle: "Gluteos", sets: "4", reps: "15,12,10,10", weight: null, rest: 90, notes: "", addedAt: new Date().toISOString() },
+      { name: "Sentadilla sumo mancuernas", muscle: "Piernas", sets: "4", reps: "20,15,12,10", weight: null, rest: 75, notes: "", addedAt: new Date().toISOString() },
+      { name: "Femorales máquina sentada (cluster)", muscle: "Piernas", sets: "4", reps: "12", weight: null, rest: 60, notes: "Técnica cluster", addedAt: new Date().toISOString() },
+      { name: "Abducciones máquina parada", muscle: "Gluteos", sets: "3", reps: "15,14,12", weight: null, rest: 60, notes: "", addedAt: new Date().toISOString() },
+      { name: "Hiperextensión glúteo", muscle: "Gluteos", sets: "3", reps: "20", weight: null, rest: 60, notes: "", addedAt: new Date().toISOString() }
+    ]
+  };
+  saveData(routine);
+  save('ft_routine_preloaded', true);
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+preloadRoutine();
+preloadMetrics();
+renderHoy();
+checkRoutineAge();
+</script>
+</body>
+</html>
